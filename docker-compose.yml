@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  nodeserver:
+    container_name: nodeserver
+    build: ./server
+    image: nodeserver-image
+    ports:
+      - "3001:3001"
+    networks:
+      - news_tracker
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"  
+      - "443:443"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      - ${NGINX_CONFIG_PATH}/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${NGINX_CONFIG_PATH}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${NGINX_CERTS_PATH}:/etc/nginx/data/certs
+    depends_on:
+      - nodeserver
+    networks:
+      - news_tracker
+    restart: always
+
+networks:
+  news_tracker:
+    external: true
