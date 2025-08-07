@@ -14,6 +14,9 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/newsdb 
+    depends_on:
+      - mongodb
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
@@ -22,11 +25,26 @@ services:
       retries: 3
       start_period: 10s
 
+  mongodb:
+    container_name: mongodb
+    image: mongo:6.0
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - news_tracker
+    environment:
+      - MONGO_INITDB_DATABASE=newsdb
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+
   nginx:
     container_name: nginx
     image: nginx:alpine
     ports:
-      - "80:80"  
+      - "80:80"
       - "443:443"
     environment:
       - ENVIRONMENT=${ENVIRONMENT:-development}
@@ -43,3 +61,6 @@ services:
 networks:
   news_tracker:
     external: true
+
+volumes:
+  mongo_data:
