@@ -1,3 +1,4 @@
+require('dotenv').config();
 import express from 'express';
 import mongoose from 'mongoose';
 import Tweet from '../models/tweet.model.js';
@@ -10,7 +11,7 @@ const twitterClient = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID,
   clientSecret: process.env.TWITTER_CLIENT_SECRET
 });
-
+ 
 const twitterRoute = express.Router();
 
 //  fetch all scraped tweet with pagination & optional filters

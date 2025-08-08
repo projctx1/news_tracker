@@ -25,9 +25,9 @@ getTweets();
 setInterval(getNews, 3600000); // every hour
 setInterval(getTweets, 3600000); // every hour
 
-app.use('/news', _newsRoutes["default"]);
-app.use('/prices', _pricesRoutes["default"]);
-app.use('/twitter', _twitterRoutes["default"]);
+app.use('/api/news', _newsRoutes["default"]);
+app.use('/api/prices', _pricesRoutes["default"]);
+app.use('/api/twitter', _twitterRoutes["default"]);
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {
