@@ -1,15 +1,19 @@
-// news.model.js
-const mongoose = require('mongoose');
+"use strict";
 
-const newsSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+// news.model.js
+var mongoose = require('mongoose');
+var newsSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true
+  },
   description: String,
   image_url: String,
   url: String,
   source: String,
-  published_at: Date,
-}, { timestamps: true });
-
-const News = mongoose.models.News || mongoose.model('News', newsSchema);
-
+  published_at: Date
+}, {
+  timestamps: true
+});
+var News = mongoose.models.News || mongoose.model('News', newsSchema);
 module.exports = News;

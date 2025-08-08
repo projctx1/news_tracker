@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import express from 'express';
 
 const newsRoute = express.Router();
-const News = require('../../dist/models/news.model');
+const News = require('../models/news.model');
 
 // POST - Create a news item
 newsRoute.post('/', async (req, res) => {

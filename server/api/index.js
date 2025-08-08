@@ -1,19 +1,27 @@
+require('dotenv').config()
 const express = require('express');
 const app = express();
 const port = process.env.PORT;
-
 
 require('./config/mongoose.config')
 
 app.use(express.json())
 
-import newsRoute from './routes/news.routes';
-import pricesRoute from './routes/prices.routes';
-import twitterRoute from './routes/twitter.routes'
+import newsRoute from './routes/news.routes.js';
+import pricesRoute from './routes/prices.routes.js';
+import twitterRoute from './routes/twitter.routes.js';
+
+const { getNews } = require('./services/news.services');
+const { getTweets } = require('./services/twitter.services');
+
+//setup cronjobs
+getNews();
+getTweets();
 
 app.use('/news', newsRoute);
 app.use('/prices', pricesRoute);
 app.use('/twitter', twitterRoute);
+
 
 app.get('/health', async (req, res, next) => {
   try {

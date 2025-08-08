@@ -1,8 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import Tweet from '../../dist/models/tweet.model.js';
-import TargetAccount from '../../dist/models/target_account.model.js';
-import TwitterUser from '../../dist/models/twitter_user.model.js';
+import Tweet from '../models/tweet.model.js';
+import TargetAccount from '../models/target_account.model.js';
+import TwitterUser from '../models/twitter_user.model.js';
+import TwitterApi  from 'twitter-api-v2';
+
 
 const twitterClient = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID,
