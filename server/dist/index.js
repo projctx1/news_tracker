@@ -22,6 +22,9 @@ var _require2 = require('./services/twitter.services'),
 //setup cronjobs
 getNews();
 getTweets();
+setInterval(getNews, 3600000); // every hour
+setInterval(getTweets, 3600000); // every hour
+
 app.use('/news', _newsRoutes["default"]);
 app.use('/prices', _pricesRoutes["default"]);
 app.use('/twitter', _twitterRoutes["default"]);

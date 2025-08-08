@@ -23,10 +23,6 @@ function _getTweets() {
     return _regenerator().w(function (_context2) {
       while (1) switch (_context2.p = _context2.n) {
         case 0:
-          if (!true) {
-            _context2.n = 22;
-            break;
-          }
           console.log("Fetching tweets...");
           _context2.p = 1;
           _context2.n = 2;
@@ -125,7 +121,7 @@ function _getTweets() {
         case 13:
           _context2.n = 14;
           return new Promise(function (resolve) {
-            return setTimeout(resolve, 32 * 60 * 1000);
+            return setTimeout(resolve, 10 * 60 * 1000);
           });
         case 14:
           _context2.n = 4;
@@ -149,14 +145,6 @@ function _getTweets() {
           _t3 = _context2.v;
           console.error(" Error fetching tweets:", _t3.message);
         case 20:
-          _context2.n = 21;
-          return new Promise(function (resolve) {
-            return setTimeout(resolve, 12 * 60 * 60 * 1000);
-          });
-        case 21:
-          _context2.n = 0;
-          break;
-        case 22:
           return _context2.a(2);
       }
     }, _callee, null, [[6, 10, 11, 12], [3, 16, 17, 18], [1, 19]]);

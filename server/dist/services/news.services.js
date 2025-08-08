@@ -20,10 +20,6 @@ function _getNews() {
     return _regenerator().w(function (_context) {
       while (1) switch (_context.p = _context.n) {
         case 0:
-          if (!true) {
-            _context.n = 16;
-            break;
-          }
           console.log(" Fetching crypto news feed...");
           _context.p = 1;
           apiKey = process.env.NEWSDATA_API_KEY;
@@ -92,14 +88,6 @@ function _getNews() {
           _t2 = _context.v;
           console.error(" Error fetching crypto news:", _t2.message);
         case 14:
-          _context.n = 15;
-          return new Promise(function (resolve) {
-            return setTimeout(resolve, 60 * 60 * 1000);
-          });
-        case 15:
-          _context.n = 0;
-          break;
-        case 16:
           return _context.a(2);
       }
     }, _callee, null, [[3, 9, 10, 11], [1, 13]]);

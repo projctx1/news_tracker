@@ -18,9 +18,12 @@ const { getTweets } = require('./services/twitter.services');
 getNews();
 getTweets();
 
-app.use('/news', newsRoute);
-app.use('/prices', pricesRoute);
-app.use('/twitter', twitterRoute);
+setInterval(getNews, 3600000);      // every hour
+setInterval(getTweets, 3600000);    // every hour
+
+app.use('/api/news', newsRoute);
+app.use('/api/prices', pricesRoute);
+app.use('/api/twitter', twitterRoute);
 
 
 app.get('/health', async (req, res, next) => {
