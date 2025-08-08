@@ -8,6 +8,7 @@ const twitterClient = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID,
   clientSecret: process.env.TWITTER_CLIENT_SECRET
 });
+
 const twitterRoute = express.Router();
 
 //  fetch all scraped tweet with pagination & optional filters
@@ -48,8 +49,8 @@ twitterRoute.get('/target-tweets', async (req, res) => {
     }
 });
 
-
 // Create Tweet for a specific TwitterUser
+// This route do not return json response, instead it redirect the user to the twitter login
 twitterRoute.get('/auth', async (req, res) => {
   const { url, codeVerifier, state } = twitterClient.generateOAuth2AuthLink(
     process.env.TWITTER_CALLBACK_URL,
@@ -70,7 +71,7 @@ twitterRoute.get('/callback', async (req, res) => {
   }
 
   try {
-    const { client: loggedClient, accessToken, refreshToken, expiresIn } =
+    const { client: loggedClient, accessToken, refreshToken } =
       await twitterClient.loginWithOAuth2({
         code,
         codeVerifier: req.session.codeVerifier,
@@ -79,18 +80,33 @@ twitterRoute.get('/callback', async (req, res) => {
 
     const me = await loggedClient.v2.me();
 
-    await TwitterUser.create({
-      username: me.data.username,
-      accountId: me.data.id,
-      accessToken,
-      accessSecret: refreshToken || ''  
-    });
+    // 1 Check if user already exists
+    let existingUser = await TwitterUser.findOne({ accountId: me.data.id });
+
+    if (!existingUser) {
+      // 2 Create Twitter user in DB
+      existingUser = await TwitterUser.create({
+        username: me.data.username,
+        accountId: me.data.id,
+        accessToken,
+        accessSecret: refreshToken || ''
+      });
+
+      // 3 Add to TargetAccount if not already there
+      const existingTarget = await TargetAccount.findOne({ author_username: me.data.username });
+      if (!existingTarget) {
+        await TargetAccount.create({ author_username: me.data.username });
+      }
+    }
 
     res.send("Twitter account connected!");
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     console.error(error);
     res.status(500).send("Authentication failed");
   }
+  
 });
 
 // Create a Twitter User (store account creds)
@@ -173,7 +189,5 @@ twitterRoute.delete('/targets/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
-
 
 export default twitterRoute;
