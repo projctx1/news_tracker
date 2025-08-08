@@ -3,8 +3,9 @@
 require('dotenv').config();
 const mongoose = require('../config/mongoose.config').default;
 const axios = require('axios');
-const TargetAccount = mongoose.model('TargetAccount', targetAccountSchema);
-const Tweet = mongoose.model('Tweet', tweetSchema);
+
+const TargetAccount = require('../models/target_account.model');
+const Tweet = require('../models/tweet.model');
 
 function _getTweets() {
   _getTweets = _asyncToGenerator(

@@ -12,34 +12,6 @@ var express = require('express');
 var app = express();
 var port = process.env.PORT;
 require('./config/mongoose.config');
-const mongoose = require('./config/mongoose.config').default;
-
-// Define all the Mongoose schema--------------------
-const outsourceArticleSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  meta_data: { type: String, required: true },
-  is_posted: { type: Boolean, default: false }
-}, { timestamps: true });
-
-const targetAccountSchema = new mongoose.Schema({
-  author_username: { type: String, required: true }
-});
-
-const tweetSchema = new mongoose.Schema({
-  TweetId: { type: String, required: true, unique: true },
-  Text: String,
-  AuthorId: String,
-  TweetedAt: String,
-  AuthorUsername: String,
-  AuthorName: String,
-  AuthorProfileImageUrl: String,
-  RetweetCount: Number,
-  ReplyCount: Number,
-  LikeCount: Number,
-  QuoteCount: Number
-}, { timestamps: true });
-//-----------------------------------------------
-
 app.use(express.json());
 app.use('/news', _news["default"]);
 app.use('/prices', _prices["default"]);
