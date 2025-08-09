@@ -57,7 +57,7 @@ async function getTweets()
             console.log(" Tweets saved with author info and metrics.");
             }
 
-            // Wait 32 minutes between target accounts
+            // Wait 10 minutes between target accounts
             await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000));
         }
     } 

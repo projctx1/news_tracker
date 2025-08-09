@@ -10,6 +10,7 @@ app.use(express.json());
 import newsRoute from './routes/news.routes.js';
 import pricesRoute from './routes/prices.routes.js';
 import twitterRoute from './routes/twitter.routes.js';
+import metaRoute from './routes/meta.routes.js';
 
 const { getNews } = require('./services/news.services');
 const { getTweets } = require('./services/twitter.services');
@@ -38,6 +39,7 @@ const {
 app.use('/api/news', newsRoute);
 app.use('/api/prices', pricesRoute);
 app.use('/api/twitter', twitterRoute);
+app.use('/api/meta', metaRoute);
 
 const symbol = 'BTC_USDT';
 const interval = 'MINUTE_30';
