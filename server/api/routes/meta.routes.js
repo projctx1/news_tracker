@@ -6,15 +6,64 @@ import MetaUser from "../models/meta_user.model.js";
 const { META_APP_ID, META_APP_SECRET, META_REDIRECT_URI } = process.env;
 const metaRoute = express.Router();
 
-/**
- * perform token refresh
- */
-async function getValidToken(userId) {
-  const metaUser = await MetaUser.findOne({ userId });
-  if (!metaUser) throw new Error("Meta user not found");
 
-  // TODO: Add refresh logic if tokenExpiry < now
-  return metaUser.facebook.userAccessToken;
+/**
+ * Middleware to ensure a valid Meta (Facebook/Instagram) token.
+ * - Refreshes if expired.
+ * - Attaches `req.metaUser` and `req.accessToken`.
+ */
+async function getValidToken(req, res, next) {
+  const { userId } = req.body; 
+
+  if (!userId) {
+    return res.status(400).json({ message: "Missing userId" });
+  }
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) {
+      return res.status(404).json({ message: "Meta user not found" });
+    }
+
+    const now = new Date();
+    let token = metaUser.facebook.userAccessToken;
+
+    // If token expired or will expire in next 5 mins, refresh
+    if (!metaUser.tokenExpiry || metaUser.tokenExpiry <= new Date(now.getTime() + 5 * 60 * 1000)) {
+      console.log(`Refreshing token for user ${userId}...`);
+
+      const refreshRes = await axios.get(`https://graph.facebook.com/v21.0/oauth/access_token`, {
+        params: {
+          grant_type: "fb_exchange_token",
+          client_id: META_APP_ID,
+          client_secret: META_APP_SECRET,
+          fb_exchange_token: metaUser.facebook.refreshToken || token
+        }
+      });
+
+      token = refreshRes.data.access_token;
+      const expiresIn = refreshRes.data.expires_in;
+      const newExpiryDate = new Date(now.getTime() + expiresIn * 1000);
+
+      // Save refreshed token
+      metaUser.facebook.userAccessToken = token;
+      metaUser.facebook.refreshToken = token;
+      metaUser.tokenExpiry = newExpiryDate;
+      await metaUser.save();
+
+      console.log(`Token refreshed. Expires at ${newExpiryDate.toISOString()}`);
+    }
+
+    // Attach to request for use in controllers
+    req.metaUser = metaUser;
+    req.accessToken = token;
+
+    next();
+  } 
+  catch (error) {
+    console.error("Token middleware error:", error.response?.data || error.message);
+    return res.status(500).json({ message: "Failed to validate Meta token" });
+  }
 }
 
 /**
@@ -96,7 +145,7 @@ metaRoute.get("/auth/callback", async (req, res) => {
 /**
  * Connect Instagram account linked to the user's FB page
  * ensure you have connected your facebook page with your instagram page 
- * pass userId as query parameter when calling this api
+ * pass userId in the body parameter when calling this api
  */
 metaRoute.post("/connect-instagram-page", async (req, res) => {
   const { userId } = req.body;
@@ -162,7 +211,7 @@ metaRoute.post("/connect-instagram-page", async (req, res) => {
 /**
  * Create a Facebook Post
  */
-metaRoute.post("/facebook", async (req, res) => {
+metaRoute.post("/facebook", getValidToken, async (req, res) => {
   const { userId, message, link } = req.body;
 
   try {
@@ -189,7 +238,7 @@ metaRoute.post("/facebook", async (req, res) => {
 /**
  * Create an Instagram Post
  */
-metaRoute.post("/instagram", async (req, res) => {
+metaRoute.post("/instagram", getValidToken, async (req, res) => {
   const { userId, caption, imageUrl } = req.body;
 
   try {
@@ -229,7 +278,7 @@ metaRoute.post("/instagram", async (req, res) => {
 /**
  * Fetch all ads for a user
  */
-metaRoute.get("/ads", async (req, res) => {
+metaRoute.get("/ads", getValidToken,  async (req, res) => {
   const { userId } = req.query;
   const { META_AD_ACCOUNT_ID } = process.env;
 
@@ -255,7 +304,7 @@ metaRoute.get("/ads", async (req, res) => {
 /**
  * Create an Advert (Facebook & Instagram)
  */
-metaRoute.post("/advert", async (req, res) => {
+metaRoute.post("/advert", getValidToken, async (req, res) => {
   const { userId, adName, adCreative, campaignName, dailyBudget } = req.body;
   const { META_AD_ACCOUNT_ID, META_DEFAULT_OBJECTIVE, META_CURRENCY } = process.env;
 
@@ -335,7 +384,7 @@ metaRoute.post("/advert", async (req, res) => {
 /**
  * Update an existing ad
  */
-metaRoute.put("/ads/:adId", async (req, res) => {
+metaRoute.put("/ads/:adId", getValidToken, async (req, res) => {
   const { userId, name, status } = req.body;
   const { adId } = req.params;
 
