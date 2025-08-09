@@ -22,6 +22,10 @@ const {
   getOrderBookFromPoloniex
 } = require('./services/poloniex.services.js');
 
+const {
+  updateBiggestCompaniesStock
+} = require('./services/stocks.services.js');
+
 
 
 //setup cronjobs
@@ -52,6 +56,8 @@ const endTime = now;
   symbol: 'BTC_USDT', 
   interval: 'MINUTE_30',
 })*/
+
+updateBiggestCompaniesStock();
 
 app.get('/health', async (req, res, next) => {
   try {

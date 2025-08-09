@@ -24,6 +24,8 @@ var _require3 = require('./services/poloniex.services.js'),
   getCandlestickDataFromPoloniex = _require3.getCandlestickDataFromPoloniex,
   savePoloniexCandlesForPair = _require3.savePoloniexCandlesForPair,
   getOrderBookFromPoloniex = _require3.getOrderBookFromPoloniex;
+var _require4 = require('./services/stocks.services.js'),
+  updateBiggestCompaniesStock = _require4.updateBiggestCompaniesStock;
 
 //setup cronjobs
 //getNews();
@@ -52,6 +54,7 @@ var endTime = now;
   interval: 'MINUTE_30',
 })*/
 
+updateBiggestCompaniesStock();
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {
