@@ -3,9 +3,9 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT;
 
-require('./config/mongoose.config')
+require('./config/mongoose.config');
 
-app.use(express.json())
+app.use(express.json());
 
 import newsRoute from './routes/news.routes.js';
 import pricesRoute from './routes/prices.routes.js';
@@ -14,17 +14,44 @@ import twitterRoute from './routes/twitter.routes.js';
 const { getNews } = require('./services/news.services');
 const { getTweets } = require('./services/twitter.services');
 
-//setup cronjobs
-getNews();
-getTweets();
+const {
+  getCryptoMarketPairsFromPoloniex,
+  getCryptoMarketPricesFromPoloniex,
+  getCandlestickDataFromPoloniex,
+  savePoloniexCandlesForPair,
+  getOrderBookFromPoloniex
+} = require('./services/poloniex.services.js');
 
-setInterval(getNews, 3600000);      // every hour
-setInterval(getTweets, 3600000);    // every hour
+
+
+//setup cronjobs
+//getNews();
+//getTweets();
+
+//setInterval(getNews, 3600000);      // every hour
+//setInterval(getTweets, 3600000);    // every hour
 
 app.use('/api/news', newsRoute);
 app.use('/api/prices', pricesRoute);
 app.use('/api/twitter', twitterRoute);
 
+const symbol = 'BTC_USDT';
+const interval = 'MINUTE_30';
+const limit = `149`;
+
+const now = new Date().getTime();
+const oneDayAgo = now - 24 * 60 * 60 * 1000;
+const startTime = oneDayAgo;
+const endTime = now;
+
+//getCandlestickDataFromPoloniex(symbol, interval, limit, startTime, endTime);
+//getOrderBookFromPoloniex(symbol)
+//getCryptoMarketPairsFromPoloniex();
+//getCryptoMarketPricesFromPoloniex();
+savePoloniexCandlesForPair({
+  symbol: 'BTC_USDT',
+  interval: 'MINUTE_30',
+})
 
 app.get('/health', async (req, res, next) => {
   try {

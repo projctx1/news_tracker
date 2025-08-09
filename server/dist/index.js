@@ -18,16 +18,39 @@ var _require = require('./services/news.services'),
   getNews = _require.getNews;
 var _require2 = require('./services/twitter.services'),
   getTweets = _require2.getTweets;
+var _require3 = require('./services/poloniex.services.js'),
+  getCryptoMarketPairsFromPoloniex = _require3.getCryptoMarketPairsFromPoloniex,
+  getCryptoMarketPricesFromPoloniex = _require3.getCryptoMarketPricesFromPoloniex,
+  getCandlestickDataFromPoloniex = _require3.getCandlestickDataFromPoloniex,
+  savePoloniexCandlesForPair = _require3.savePoloniexCandlesForPair,
+  getOrderBookFromPoloniex = _require3.getOrderBookFromPoloniex;
 
 //setup cronjobs
-getNews();
-getTweets();
-setInterval(getNews, 3600000); // every hour
-setInterval(getTweets, 3600000); // every hour
+//getNews();
+//getTweets();
+
+//setInterval(getNews, 3600000);      // every hour
+//setInterval(getTweets, 3600000);    // every hour
 
 app.use('/api/news', _newsRoutes["default"]);
 app.use('/api/prices', _pricesRoutes["default"]);
 app.use('/api/twitter', _twitterRoutes["default"]);
+var symbol = 'BTC_USDT';
+var interval = 'MINUTE_30';
+var limit = "149";
+var now = new Date().getTime();
+var oneDayAgo = now - 24 * 60 * 60 * 1000;
+var startTime = oneDayAgo;
+var endTime = now;
+
+//getCandlestickDataFromPoloniex(symbol, interval, limit, startTime, endTime);
+//getOrderBookFromPoloniex(symbol)
+//getCryptoMarketPairsFromPoloniex();
+//getCryptoMarketPricesFromPoloniex();
+savePoloniexCandlesForPair({
+  symbol: 'BTC_USDT',
+  interval: 'MINUTE_30'
+});
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {

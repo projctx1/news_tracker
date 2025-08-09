@@ -6,7 +6,6 @@ import TargetAccount from '../models/target_account.model.js';
 import TwitterUser from '../models/twitter_user.model.js';
 import TwitterApi  from 'twitter-api-v2';
 
-
 const twitterClient = new TwitterApi({
   clientId: process.env.TWITTER_CLIENT_ID,
   clientSecret: process.env.TWITTER_CLIENT_SECRET
@@ -20,7 +19,7 @@ twitterRoute.get('/target-tweets', async (req, res) => {
         // Query params for pagination
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-
+ 
         // Optional filters (example: by author or keyword)
         const filters = {};
         if (req.query.author) {
