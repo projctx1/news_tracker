@@ -1,4 +1,8 @@
 const fs = require('fs').promises;
+require('dotenv').config();
+import mongoose from 'mongoose';
+
+//require('../config/mongoose.config');
 
 import TopStock from '../models/topstocks.model';
 
