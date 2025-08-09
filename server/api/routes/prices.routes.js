@@ -24,5 +24,13 @@ pricesRoute.get('/get/candlesticks', async (req, res) => {
     }
 });
 
+pricesRoute.get('/get/top/stocks', async (req, res) => {
+    try {
+
+    } catch (error) {
+        console.log(error)
+    }
+})
+
 
 export default pricesRoute;

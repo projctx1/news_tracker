@@ -26,6 +26,8 @@ var _require3 = require('./services/poloniex.services.js'),
   getOrderBookFromPoloniex = _require3.getOrderBookFromPoloniex;
 var _require4 = require('./services/stocks.services.js'),
   updateBiggestCompaniesStock = _require4.updateBiggestCompaniesStock;
+var _require5 = require('./services/scraper.services.js'),
+  scrapAndSaveToDb = _require5.scrapAndSaveToDb;
 
 //setup cronjobs
 //getNews();
@@ -55,7 +57,9 @@ var endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
-
+scrapAndSaveToDb({
+  url: 'https://tradingeconomics.com/commodities'
+});
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {

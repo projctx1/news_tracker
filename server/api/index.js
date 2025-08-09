@@ -26,6 +26,10 @@ const {
   updateBiggestCompaniesStock
 } = require('./services/stocks.services.js');
 
+const {
+  scrapAndSaveToDb
+} = require('./services/scraper.services.js');
+
 
 
 //setup cronjobs
@@ -58,6 +62,7 @@ const endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
+scrapAndSaveToDb({ url: 'https://tradingeconomics.com/commodities' });
 
 app.get('/health', async (req, res, next) => {
   try {

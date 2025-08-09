@@ -11,10 +11,12 @@ services:
       - news_tracker
     volumes:
       - ./server:/app
-      - /app/node_modules
+      - /home/jvxde9/.cache/puppeteer:/app/.cache/puppeteer
     environment:
       - NODE_ENV=production
       - MONGO_URI=mongodb://root:example@mongodb:27017/newsdb?authSource=admin
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
     depends_on:
       - mongodb
     restart: always
