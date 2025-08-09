@@ -235,8 +235,7 @@ function _savePoloniexCandlesForPair() {
         case 2:
           fileContent = _context5.v;
           candleData = JSON.parse(fileContent);
-          parsedCandles = _PoloniexParser["default"].parseCandles(candleData);
-          console.log(parsedCandles, 'parsedCandles');
+          parsedCandles = _PoloniexParser["default"].parseCandles(candleData); //console.log(parsedCandles, 'parsedCandles');
           filename = "poloniex_parsed_candles_".concat(symbol, "_").concat(interval, ".json");
           _context5.n = 3;
           return fs.writeFile(filename, JSON.stringify(parsedCandles, null, 2), 'utf8');

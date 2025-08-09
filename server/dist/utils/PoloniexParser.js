@@ -50,8 +50,22 @@ var PoloniexParser = /*#__PURE__*/function () {
   }, {
     key: "toLightweightCandle",
     value: function toLightweightCandle(parsed) {
+      var timestamp = Number(parsed.startTime);
+
+      // Create a new Date object from the timestamp (milliseconds)
+      var dateObject = new Date(timestamp);
+
+      // Extract the year, month, and day
+      var year = dateObject.getFullYear();
+      var month = String(dateObject.getMonth() + 1).padStart(2, '0'); // getMonth() is 0-indexed, so add 1
+      var day = String(dateObject.getDate()).padStart(2, '0');
+
+      // Combine them into the desired format
+      var formattedDate = "".concat(year, "-").concat(month, "-").concat(day);
+      console.log(Number(parsed.startTime), formattedDate);
       return {
-        time: new Date(parsed.startTime).toISOString().split('T')[0],
+        time: parsed.startTime,
+        // parsed.startTime,
         open: parsed.open,
         high: parsed.high,
         low: parsed.low,

@@ -152,7 +152,7 @@ async function savePoloniexCandlesForPair({ symbol, interval }) {
 
         const parsedCandles = PoloniexParser.parseCandles(candleData);
 
-        console.log(parsedCandles, 'parsedCandles');
+        //console.log(parsedCandles, 'parsedCandles');
 
         filename = `poloniex_parsed_candles_${symbol}_${interval}.json`; 
 

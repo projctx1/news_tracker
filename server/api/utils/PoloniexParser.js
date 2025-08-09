@@ -25,10 +25,23 @@ class PoloniexParser {
     }
 
     static toLightweightCandle(parsed) {
+        const timestamp = Number(parsed.startTime);
+
+        // Create a new Date object from the timestamp (milliseconds)
+        const dateObject = new Date(timestamp);
+
+        // Extract the year, month, and day
+        const year = dateObject.getFullYear();
+        const month = String(dateObject.getMonth() + 1).padStart(2, '0'); // getMonth() is 0-indexed, so add 1
+        const day = String(dateObject.getDate()).padStart(2, '0');
+
+        // Combine them into the desired format
+        const formattedDate = `${year}-${month}-${day}`;
+
+        console.log(Number(parsed.startTime), formattedDate);
+
         return {
-            time: new Date(parsed.startTime)
-                .toISOString()
-                .split('T')[0],
+            time: parsed.startTime,// parsed.startTime,
             open: parsed.open,
             high: parsed.high,
             low: parsed.low,

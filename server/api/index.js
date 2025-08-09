@@ -48,10 +48,10 @@ const endTime = now;
 //getOrderBookFromPoloniex(symbol)
 //getCryptoMarketPairsFromPoloniex();
 //getCryptoMarketPricesFromPoloniex();
-savePoloniexCandlesForPair({
-  symbol: 'BTC_USDT',
+/*savePoloniexCandlesForPair({
+  symbol: 'BTC_USDT', 
   interval: 'MINUTE_30',
-})
+})*/
 
 app.get('/health', async (req, res, next) => {
   try {

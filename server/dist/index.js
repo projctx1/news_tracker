@@ -47,10 +47,11 @@ var endTime = now;
 //getOrderBookFromPoloniex(symbol)
 //getCryptoMarketPairsFromPoloniex();
 //getCryptoMarketPricesFromPoloniex();
-savePoloniexCandlesForPair({
-  symbol: 'BTC_USDT',
-  interval: 'MINUTE_30'
-});
+/*savePoloniexCandlesForPair({
+  symbol: 'BTC_USDT', 
+  interval: 'MINUTE_30',
+})*/
+
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {
