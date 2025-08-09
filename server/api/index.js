@@ -57,7 +57,7 @@ const endTime = now;
   interval: 'MINUTE_30',
 })*/
 
-updateBiggestCompaniesStock();
+//updateBiggestCompaniesStock();
 
 app.get('/health', async (req, res, next) => {
   try {

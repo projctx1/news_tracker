@@ -54,7 +54,8 @@ var endTime = now;
   interval: 'MINUTE_30',
 })*/
 
-updateBiggestCompaniesStock();
+//updateBiggestCompaniesStock();
+
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {
