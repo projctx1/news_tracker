@@ -29,8 +29,3 @@ async function scrapAndSaveToDb({ url }) {
 module.exports = {
     scrapAndSaveToDb
 };
-
-
-module.exports = {
-    scrapAndSaveToDb
-}

@@ -58,6 +58,3 @@ function _scrapAndSaveToDb() {
 module.exports = {
   scrapAndSaveToDb: scrapAndSaveToDb
 };
-module.exports = {
-  scrapAndSaveToDb: scrapAndSaveToDb
-};
