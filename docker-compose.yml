@@ -11,10 +11,12 @@ services:
       - news_tracker
     volumes:
       - ./server:/app
-      - /app/node_modules
+      - /home/jvxde9/.cache/puppeteer:/app/.cache/puppeteer
     environment:
       - NODE_ENV=production
       - MONGO_URI=mongodb://root:example@mongodb:27017/newsdb?authSource=admin
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_CACHE_DIR=/app/.cache/puppeteer
     depends_on:
       - mongodb
     restart: always
@@ -24,6 +26,24 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  llmserver:
+    container_name: llmserver
+    build: ./llm
+    image: llmserver-image
+    ports:
+      - "3002:3002"
+    networks:
+      - news_tracker
+    volumes:
+      - ./llm:/app
+      - ./files:/app/server/files
+    environment:
+      - MONGO_URI=mongodb://root:example@mongodb:27017/newsdb?authSource=admin
+      - PORT=3002
+    depends_on:
+      - mongodb
+    restart: always
 
   mongodb:
     container_name: mongodb

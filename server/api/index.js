@@ -30,6 +30,10 @@ const {
   updateBiggestCompaniesStock
 } = require('./services/stocks.services.js');
 
+const {
+  scrapAndSaveToDb
+} = require('./services/scraper.services.js');
+
 
 
 //setup cronjobs
@@ -63,6 +67,7 @@ const endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
+//scrapAndSaveToDb({ url: 'https://www.coindesk.com/' });
 
 
 
