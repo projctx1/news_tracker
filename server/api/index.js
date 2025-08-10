@@ -64,7 +64,7 @@ const endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
-scrapAndSaveToDb({ url: 'https://tradingeconomics.com/commodities' });
+//scrapAndSaveToDb({ url: 'https://www.coindesk.com/' });
 
 app.get('/health', async (req, res, next) => {
   try {

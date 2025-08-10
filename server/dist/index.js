@@ -59,9 +59,8 @@ var endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
-scrapAndSaveToDb({
-  url: 'https://tradingeconomics.com/commodities'
-});
+//scrapAndSaveToDb({ url: 'https://www.coindesk.com/' });
+
 app.get('/health', /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res, next) {
     return _regenerator().w(function (_context) {
