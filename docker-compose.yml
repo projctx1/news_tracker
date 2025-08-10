@@ -27,6 +27,24 @@ services:
       retries: 3
       start_period: 10s
 
+  llmserver:
+    container_name: llmserver
+    build: ./llm
+    image: llmserver-image
+    ports:
+      - "3002:3002"
+    networks:
+      - news_tracker
+    volumes:
+      - ./llm:/app
+      - ./files:/app/server/files
+    environment:
+      - MONGO_URI=mongodb://root:example@mongodb:27017/newsdb?authSource=admin
+      - PORT=3002
+    depends_on:
+      - mongodb
+    restart: always
+
   mongodb:
     container_name: mongodb
     image: mongo:6.0
