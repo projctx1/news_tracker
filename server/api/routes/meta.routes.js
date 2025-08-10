@@ -13,7 +13,7 @@ const metaRoute = express.Router();
  * - Attaches `req.metaUser` and `req.accessToken`.
  */
 async function getValidToken(req, res, next) {
-  const { userId } = req.body; 
+  const { userId } = req.body;
 
   if (!userId) {
     return res.status(400).json({ message: "Missing userId" });
@@ -32,7 +32,7 @@ async function getValidToken(req, res, next) {
     if (!metaUser.tokenExpiry || metaUser.tokenExpiry <= new Date(now.getTime() + 5 * 60 * 1000)) {
       console.log(`Refreshing token for user ${userId}...`);
 
-      const refreshRes = await axios.get(`https://graph.facebook.com/v21.0/oauth/access_token`, {
+      const refreshRes = await axios.get(`https://graph.facebook.com/v18.0/oauth/access_token`, {
         params: {
           grant_type: "fb_exchange_token",
           client_id: META_APP_ID,
@@ -59,7 +59,7 @@ async function getValidToken(req, res, next) {
     req.accessToken = token;
 
     next();
-  } 
+  }
   catch (error) {
     console.error("Token middleware error:", error.response?.data || error.message);
     return res.status(500).json({ message: "Failed to validate Meta token" });
@@ -70,7 +70,7 @@ async function getValidToken(req, res, next) {
  * Step 1: Redirect to Facebook OAuth
  */
 metaRoute.get("/auth", (req, res) => {
-  const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish&response_type=code`;
+  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish&response_type=code`;
   res.redirect(authUrl);
 });
 
@@ -78,12 +78,12 @@ metaRoute.get("/auth", (req, res) => {
  * Step 2: Handle OAuth callback
  */
 metaRoute.get("/auth/callback", async (req, res) => {
-  const { code, userId } = req.query; 
+  const { code } = req.query; // no userId in query anymore
 
   try {
     // Exchange code for short-lived token
     const tokenRes = await axios.get(
-      `https://graph.facebook.com/v21.0/oauth/access_token`,
+      `https://graph.facebook.com/v18.0/oauth/access_token`,
       {
         params: {
           client_id: META_APP_ID,
@@ -95,10 +95,13 @@ metaRoute.get("/auth/callback", async (req, res) => {
     );
 
     const shortLivedToken = tokenRes.data.access_token;
+    if (!shortLivedToken) {
+      throw new Error("No short-lived token returned from Facebook");
+    }
 
     // Exchange short-lived token for long-lived token
     const longTokenRes = await axios.get(
-      `https://graph.facebook.com/v21.0/oauth/access_token`,
+      `https://graph.facebook.com/v18.0/oauth/access_token`,
       {
         params: {
           grant_type: "fb_exchange_token",
@@ -110,37 +113,70 @@ metaRoute.get("/auth/callback", async (req, res) => {
     );
 
     const longLivedToken = longTokenRes.data.access_token;
-    const expiryDate = new Date(Date.now() + longTokenRes.data.expires_in * 1000);
+    if (!longLivedToken) {
+      throw new Error("No long-lived token returned from Facebook");
+    }
+
+    // Calculate expiry date safely
+    let expiryDate;
+    if (longTokenRes.data.expires_in && !isNaN(longTokenRes.data.expires_in)) {
+      expiryDate = new Date(Date.now() + longTokenRes.data.expires_in * 1000);
+    } else {
+      expiryDate = new Date("9999-12-31");
+    }
+
+    // Get Facebook user ID from /me endpoint
+    const meRes = await axios.get("https://graph.facebook.com/me", {
+      params: {
+        access_token: longLivedToken,
+        fields: "id,name",
+      },
+    });
+
+    const metaUserId = meRes.data.id;
+    if (!metaUserId) {
+      throw new Error("Could not retrieve Facebook user ID from /me");
+    }
 
     // Get user pages
     const pagesRes = await axios.get(
-      `https://graph.facebook.com/me/accounts?access_token=${longLivedToken}`
+      `https://graph.facebook.com/me/accounts`,
+      {
+        params: { access_token: longLivedToken },
+      }
     );
 
-    // Create or update MetaUser
+    const pages = Array.isArray(pagesRes.data.data)
+      ? pagesRes.data.data.map((p) => ({
+          pageId: p.id,
+          pageName: p.name,
+          pageAccessToken: p.access_token,
+        }))
+      : [];
+
+    // Create or update MetaUser in DB using Facebook user ID as unique userId
     const metaUser = await MetaUser.findOneAndUpdate(
-      { userId },
+      { userId: metaUserId }, // userId is Facebook user ID string
       {
         facebook: {
           userAccessToken: longLivedToken,
           refreshToken: longLivedToken,
-          pages: pagesRes.data.data.map((p) => ({
-            pageId: p.id,
-            pageName: p.name,
-            pageAccessToken: p.access_token,
-          })),
+          pages,
         },
         tokenExpiry: expiryDate,
       },
       { upsert: true, new: true }
     );
 
+    // Return response
     res.json({ success: true, metaUser });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("OAuth callback error:", error.response?.data || error.message);
     res.status(500).json({ message: "OAuth callback failed" });
   }
 });
+
+
 
 /**
  * Connect Instagram account linked to the user's FB page
@@ -165,7 +201,7 @@ metaRoute.post("/connect-instagram-page", async (req, res) => {
 
     // Step 1: Get Instagram Business Account ID linked to this FB page
     const igRes = await axios.get(
-      `https://graph.facebook.com/v21.0/${page.pageId}`,
+      `https://graph.facebook.com/v18.0/${page.pageId}`,
       {
         params: {
           fields: "instagram_business_account",
@@ -181,7 +217,7 @@ metaRoute.post("/connect-instagram-page", async (req, res) => {
 
     // Step 2: Get Instagram username & details
     const igDetailsRes = await axios.get(
-      `https://graph.facebook.com/v21.0/${igBusinessAccountId}`,
+      `https://graph.facebook.com/v18.0/${igBusinessAccountId}`,
       {
         params: {
           fields: "username",
@@ -237,6 +273,18 @@ metaRoute.post("/facebook", getValidToken, async (req, res) => {
 
 /**
  * Create an Instagram Post
+ * 
+ * Use a properly sized image that fits Instagram’s requirements:
+
+*  Typical aspect ratios accepted for Instagram feed posts:
+
+        Landscape: 1.91:1
+
+        Square: 1:1
+
+        Portrait: 4:5
+
+        eg use this sample (https://100xinsider.com/uploads/1745193177OPINION_blog_image_1745193177.png)
  */
 metaRoute.post("/instagram", getValidToken, async (req, res) => {
   const { userId, caption, imageUrl } = req.body;
@@ -269,7 +317,8 @@ metaRoute.post("/instagram", getValidToken, async (req, res) => {
     );
 
     res.json({ success: true, postId: publishRes.data.id });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error(error.response?.data || error.message);
     res.status(500).json({ message: "Failed to create Instagram post" });
   }
@@ -278,14 +327,21 @@ metaRoute.post("/instagram", getValidToken, async (req, res) => {
 /**
  * Fetch all ads for a user
  */
-metaRoute.get("/ads", getValidToken,  async (req, res) => {
+metaRoute.get("/ads", async (req, res) => {
   const { userId } = req.query;
   const { META_AD_ACCOUNT_ID } = process.env;
 
-  try {
-    const accessToken = await getValidToken(userId);
+  try 
+  {
+
+    const metaUser = await MetaUser.findOne({ userId });
+    
+    if (!metaUser) {
+      return res.status(404).json({ message: "Meta user not found" });
+    }
+    const accessToken = metaUser.facebook.userAccessToken;
     const adsRes = await axios.get(
-      `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/ads`,
+      `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/ads`,
       {
         params: {
           access_token: accessToken,
@@ -308,19 +364,17 @@ metaRoute.post("/advert", getValidToken, async (req, res) => {
   const { userId, adName, adCreative, campaignName, dailyBudget } = req.body;
   const { META_AD_ACCOUNT_ID, META_DEFAULT_OBJECTIVE, META_CURRENCY } = process.env;
 
-  try
-   {
+  try {
     const metaUser = await MetaUser.findOne({ userId });
     if (!metaUser) {
       return res.status(404).json({ message: "Meta user not found" });
     }
+    const accessToken = metaUser.facebook.userAccessToken;
 
-    // Step 0: Get valid token
-    const accessToken = await getValidToken(userId);
 
     // Step 1: Create Campaign
     const campaignRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/campaigns`,
+      `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/campaigns`,
       {
         name: campaignName,
         objective: META_DEFAULT_OBJECTIVE,
@@ -331,10 +385,10 @@ metaRoute.post("/advert", getValidToken, async (req, res) => {
 
     // Step 2: Create Ad Set
     const adSetRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/adsets`,
+      `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/adsets`,
       {
         name: `${campaignName} AdSet`,
-        daily_budget: dailyBudget, 
+        daily_budget: dailyBudget,
         billing_event: "IMPRESSIONS",
         optimization_goal: "REACH",
         campaign_id: campaignRes.data.id,
@@ -347,7 +401,7 @@ metaRoute.post("/advert", getValidToken, async (req, res) => {
 
     // Step 3: Create Ad Creative
     const creativeRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/adcreatives`,
+      `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/adcreatives`,
       {
         name: adName,
         object_story_spec: adCreative
@@ -357,7 +411,7 @@ metaRoute.post("/advert", getValidToken, async (req, res) => {
 
     // Step 4: Create Ad
     const adRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/ads`,
+      `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/ads`,
       {
         name: adName,
         adset_id: adSetRes.data.id,
@@ -389,10 +443,13 @@ metaRoute.put("/ads/:adId", getValidToken, async (req, res) => {
   const { adId } = req.params;
 
   try {
-    const accessToken = await getValidToken(userId);
+     if (!metaUser) {
+      return res.status(404).json({ message: "Meta user not found" });
+    }
+    const accessToken = metaUser.facebook.userAccessToken;
 
     const updateRes = await axios.post(
-      `https://graph.facebook.com/v21.0/${adId}`,
+      `https://graph.facebook.com/v18.0/${adId}`,
       {
         ...(name && { name }),
         ...(status && { status })
@@ -410,15 +467,17 @@ metaRoute.put("/ads/:adId", getValidToken, async (req, res) => {
 /**
  * Delete an ad
  */
-metaRoute.delete("/ads/:adId", async (req, res) => {
+metaRoute.delete("/ads/:adId", getValidToken, async (req, res) => {
   const { userId } = req.body;
   const { adId } = req.params;
 
   try {
-    const accessToken = await getValidToken(userId);
-
+     if (!metaUser) {
+      return res.status(404).json({ message: "Meta user not found" });
+    }
+    const accessToken = metaUser.facebook.userAccessToken;
     const deleteRes = await axios.delete(
-      `https://graph.facebook.com/v21.0/${adId}`,
+      `https://graph.facebook.com/v18.0/${adId}`,
       { params: { access_token: accessToken } }
     );
 
