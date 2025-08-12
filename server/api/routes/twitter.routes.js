@@ -13,46 +13,27 @@ const twitterClient = new TwitterApi({
  
 const twitterRoute = express.Router();
 
-//  fetch all scraped tweet with pagination & optional filters
-twitterRoute.get('/target-tweets', async (req, res) => {
-    try {
-        // Query params for pagination
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
- 
-        // Optional filters (example: by author or keyword)
-        const filters = {};
-        if (req.query.author) {
-            filters.author = req.query.author;
-        }
-        if (req.query.keyword) {
-            filters.text = { $regex: req.query.keyword, $options: 'i' };
-        }
+/**
+ * 
+ * Warp with user credentials for posting
+ */
+async function getUserTwitterClient(userId) {
+  const twitterUser = await TwitterUser.findById(userId);
+  if (!twitterUser) throw new Error('Twitter user not found');
 
-        // Fetch tweets
-        const tweets = await Tweet.find(filters)
-            .sort({ createdAt: -1 })  
-            .skip((page - 1) * limit)
-            .limit(limit);
+  return new TwitterApi({
+    appKey: process.env.TWITTER_API_KEY,
+    appSecret: process.env.TWITTER_API_SECRET,
+    accessToken: twitterUser.accessToken,
+    accessSecret: twitterUser.accessSecret,
+  });
+}
 
-        // Count for pagination
-        const total = await Tweet.countDocuments(filters);
-
-        res.json({
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-            totalRecords: total,
-            data: tweets
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error fetching tweets' });
-    }
-});
-
-// Create Tweet for a specific TwitterUser
-// This route do not return json response, instead it redirect the user to the twitter login
+/**
+ * Create Tweet for a specific TwitterUser
+ *  This route do not return json response, instead it redirect the user to the twitter login
+ * 
+ */
 twitterRoute.get('/auth', async (req, res) => {
   const { url, codeVerifier, state } = twitterClient.generateOAuth2AuthLink(
     process.env.TWITTER_CALLBACK_URL,
@@ -64,7 +45,10 @@ twitterRoute.get('/auth', async (req, res) => {
   res.redirect(url);
 });
 
-//Callback from Twitter
+/**
+ * Callback from Twitter
+ * 
+ */
 twitterRoute.get('/callback', async (req, res) => {
   const { state, code } = req.query;
 
@@ -111,7 +95,154 @@ twitterRoute.get('/callback', async (req, res) => {
   
 });
 
-// Create a Twitter User (store account creds)
+/**
+ * 
+ * fetch all scraped tweet with pagination & optional filters
+ */
+twitterRoute.get('/target-tweets', async (req, res) => {
+    try {
+        // Query params for pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+ 
+        // Optional filters (example: by author or keyword)
+        const filters = {};
+        if (req.query.author) {
+            filters.author = req.query.author;
+        }
+        if (req.query.keyword) {
+            filters.text = { $regex: req.query.keyword, $options: 'i' };
+        }
+
+        // Fetch tweets
+        const tweets = await Tweet.find(filters)
+            .sort({ createdAt: -1 })  
+            .skip((page - 1) * limit)
+            .limit(limit);
+
+        // Count for pagination
+        const total = await Tweet.countDocuments(filters);
+
+        res.json({
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            totalRecords: total,
+            data: tweets
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error fetching tweets' });
+    }
+});
+
+/**
+ * Create a tweet
+ * 
+ */
+twitterRoute.post('/twitter/post', async (req, res) => {
+  const { userId, text } = req.body;
+  try {
+    const client = await getUserTwitterClient(userId);
+    const tweet = await client.v2.tweet(text);
+    res.json({ success: true, tweet });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to create tweet' });
+  }
+});
+
+
+/**
+ * Get recent tweets posted by user on twitter
+ * 
+ */
+twitterRoute.get('/twitter/posts', async (req, res) => {
+  const { userId, max_results = 10, pagination_token } = req.query;
+  try {
+    const twitterUser = await TwitterUser.findById(userId);
+    if (!twitterUser) return res.status(404).json({ message: 'Twitter user not found' });
+
+    const client = await getUserTwitterClient(userId);
+
+    // Get user id from stored accountId
+    const userIdTwitter = twitterUser.accountId;
+
+    const tweets = await client.v2.userTimeline(userIdTwitter, {
+      max_results,
+      pagination_token,
+      expansions: ['author_id'],
+      'tweet.fields': ['created_at', 'public_metrics'],
+    });
+
+    res.json({
+      success: true,
+      tweets: tweets.data,
+      meta: tweets.meta,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch tweets' });
+  }
+});
+
+/**
+ * 
+ * Create a reply (comment)
+ */
+twitterRoute.post('/twitter/comments', async (req, res) => {
+  const { userId, text, in_reply_to_tweet_id } = req.body;
+  try {
+    const client = await getUserTwitterClient(userId);
+    const reply = await client.v2.tweet(text, {
+      reply: { in_reply_to_tweet_id },
+    });
+    res.json({ success: true, reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to create reply' });
+  }
+});
+
+/**
+ * Delete a tweet
+ */
+twitterRoute.delete('/twitter/post/:tweetId', async (req, res) => {
+  const { userId } = req.query
+  const { tweetId } = req.params;
+  try {
+    const client = await getUserTwitterClient(userId);
+    await client.v2.deleteTweet(tweetId);
+    res.json({ success: true, message: 'Tweet deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to delete tweet' });
+  }
+});
+
+/**
+ * 
+ * Update a comment/tweet (delete + repost)
+ */
+twitterRoute.put('/twitter/comments/:tweetId', async (req, res) => {
+  const { userId, text } = req.body;
+  const { tweetId } = req.params;
+  try {
+    const client = await getUserTwitterClient(userId);
+    await client.v2.deleteTweet(tweetId);
+    const newTweet = await client.v2.tweet(text);
+    res.json({ success: true, tweet: newTweet });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to update tweet' });
+  }
+});
+
+
+/**
+ * 
+ * Create a Twitter User (store account creds) in db
+ */
 twitterRoute.post('/users', async (req, res) => {
   try {
     const { username, accountId, bearerToken, accessToken, accessSecret } = req.body;
@@ -123,13 +254,19 @@ twitterRoute.post('/users', async (req, res) => {
   }
 });
 
-// Get all Twitter Users
+/**
+ * 
+ *  Get all Twitter Users in db
+ */
 twitterRoute.get('/users', async (req, res) => {
   const users = await TwitterUser.find();
   res.json(users);
 });
 
-// Update Twitter User
+/**
+ * 
+ * Update Twitter User in db
+ */
 twitterRoute.put('/users/:id', async (req, res) => {
   try {
     const updated = await TwitterUser.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -139,7 +276,10 @@ twitterRoute.put('/users/:id', async (req, res) => {
   }
 });
 
-// Delete Twitter User
+/**
+ * 
+ * Delete Twitter User in db
+ */
 twitterRoute.delete('/users/:id', async (req, res) => {
   try {
     await TwitterUser.findByIdAndDelete(req.params.id);
@@ -149,7 +289,10 @@ twitterRoute.delete('/users/:id', async (req, res) => {
   }
 });
 
-// Get all target accounts
+/**
+ * Get all target accounts in db
+ * 
+ */
 twitterRoute.get('/targets', async (req, res) => {
     try {
         const accounts = await TargetAccount.find();
@@ -158,8 +301,10 @@ twitterRoute.get('/targets', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
-// Create target account
+/**
+ * 
+ * Create target account in db
+ */
 twitterRoute.post('/targets', async (req, res) => {
     try {
         const account = new TargetAccount(req.body);
@@ -170,7 +315,9 @@ twitterRoute.post('/targets', async (req, res) => {
     }
 });
 
-// Update target account
+/**
+ * Update target account in db
+ */
 twitterRoute.put('/targets/:id', async (req, res) => {
     try {
         const account = await TargetAccount.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -181,7 +328,9 @@ twitterRoute.put('/targets/:id', async (req, res) => {
     }
 });
 
-// Delete target account
+/***
+ * Delete target account in db
+ */
 twitterRoute.delete('/targets/:id', async (req, res) => {
     try {
         const account = await TargetAccount.findByIdAndDelete(req.params.id);

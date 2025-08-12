@@ -66,6 +66,11 @@ async function getValidToken(req, res, next) {
   }
 }
 
+
+/*****************************************************
+ * META AUTH
+****************************************************
+*/
 /**
  * Step 1: Redirect to Facebook OAuth
  */
@@ -177,11 +182,11 @@ metaRoute.get("/auth/callback", async (req, res) => {
 });
 
 
-
 /**
  * Connect Instagram account linked to the user's FB page
  * ensure you have connected your facebook page with your instagram page 
  * pass userId in the body parameter when calling this api
+ * This api must be called before trying to post
  */
 metaRoute.post("/connect-instagram-page", async (req, res) => {
   const { userId } = req.body;
@@ -244,10 +249,52 @@ metaRoute.post("/connect-instagram-page", async (req, res) => {
   }
 });
 
+/*****************************************************
+ * FACEBOOK ROUTES
+****************************************************
+*/
+
+/**
+ * List Posts on a Facebook Page
+ */
+metaRoute.get("/facebook/posts", getValidToken, async (req, res) => {
+  const { userId, limit = 10, after, before } = req.query;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+    const pageId = metaUser.facebook.pages[0].pageId;
+
+    const params = {
+      access_token: pageToken,
+      fields: "id,message,created_time,permalink_url",
+      limit,
+    };
+
+    if (after) params.after = after;
+    if (before) params.before = before;
+
+    const postsUrl = `https://graph.facebook.com/${pageId}/posts`;
+    const postsRes = await axios.get(postsUrl, { params });
+
+    res.json({
+      success: true,
+      posts: postsRes.data.data,
+      paging: postsRes.data.paging || null,
+    });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to fetch Facebook posts" });
+  }
+});
+
+
 /**
  * Create a Facebook Post
  */
-metaRoute.post("/facebook", getValidToken, async (req, res) => {
+metaRoute.post("/facebook/text/create", getValidToken, async (req, res) => {
   const { userId, message, link } = req.body;
 
   try {
@@ -272,6 +319,181 @@ metaRoute.post("/facebook", getValidToken, async (req, res) => {
 });
 
 /**
+ * Upload a Video to Facebook Page
+ * 
+ * Facebook video upload requirements 
+    Maximum file size: 100 MB 
+
+    Maximum video length: 20 minutes
+
+    Recommended formats: MP4 or MOV
+
+    Upload method: Simple upload (direct file URL or multipart upload, ≤ 100 MB)
+
+    Required permissions:
+
+        pages_manage_posts
+
+        pages_read_engagement
+
+        Valid Page Access Token
+ */
+metaRoute.post("/facebook/video/create", getValidToken, async (req, res) => {
+  const { userId, videoUrl, title, description } = req.body;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+    const pageId = metaUser.facebook.pages[0].pageId;
+
+    // Facebook video upload endpoint
+    const uploadUrl = `https://graph.facebook.com/${pageId}/videos`;
+
+    // POST request to upload video
+    const uploadRes = await axios.post(
+      uploadUrl,
+      {
+        file_url: videoUrl,  
+        title: title || "",  
+        description: description || "",  
+        access_token: pageToken,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    res.json({ success: true, videoId: uploadRes.data.id });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to upload Facebook video" });
+  }
+});
+
+/**
+ * List comments on a post
+ */
+metaRoute.get("/facebook/comments/:postId", getValidToken, async (req, res) => {
+  const { userId, after, before, limit = 10 } = req.query;
+  const { postId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const params = {
+      access_token: pageToken,
+      fields: "id,message,created_time,from",
+      limit,
+    };
+    if (after) params.after = after;
+    if (before) params.before = before;
+
+    const commentsUrl = `https://graph.facebook.com/${postId}/comments`;
+    const commentsRes = await axios.get(commentsUrl, { params });
+
+    res.json({
+      success: true,
+      comments: commentsRes.data.data,
+      paging: commentsRes.data.paging || null,
+    });
+  } 
+  catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to fetch comments" });
+  }
+});
+
+
+/**
+ * Create a comment on a post
+ */
+metaRoute.post("/facebook/comments/:postId", getValidToken, async (req, res) => {
+  const { userId, message } = req.body;
+  const { postId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const createUrl = `https://graph.facebook.com/${postId}/comments`;
+    const createRes = await axios.post(createUrl, {
+      message,
+      access_token: pageToken,
+    });
+
+    res.json({ success: true, commentId: createRes.data.id });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to create comment" });
+  }
+});
+
+/**
+ * Update a comment
+ */
+metaRoute.put("/facebook/comments/:commentId", getValidToken, async (req, res) => {
+  const { userId, message } = req.body;
+  const { commentId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const updateUrl = `https://graph.facebook.com/${commentId}`;
+    const updateRes = await axios.post(updateUrl, {
+      message,
+      access_token: pageToken,
+    });
+
+    res.json({ success: true, updated: updateRes.data });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to update comment" });
+  }
+});
+
+/**
+ * Delete a comment
+ */
+metaRoute.delete("/facebook/comments/:commentId", getValidToken, async (req, res) => {
+  const { userId } = req.query;
+  const { commentId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser) throw new Error("Meta user not found");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const deleteUrl = `https://graph.facebook.com/${commentId}`;
+    const deleteRes = await axios.delete(deleteUrl, {
+      params: { access_token: pageToken },
+    });
+
+    res.json({ success: true, deleted: deleteRes.data.success });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to delete comment" });
+  }
+});
+
+
+
+/*****************************************************
+ * INSTAGRAM ROUTES
+****************************************************
+*/
+
+/**
  * Create an Instagram Post
  * 
  * Use a properly sized image that fits Instagram’s requirements:
@@ -286,7 +508,7 @@ metaRoute.post("/facebook", getValidToken, async (req, res) => {
 
         eg use this sample (https://100xinsider.com/uploads/1745193177OPINION_blog_image_1745193177.png)
  */
-metaRoute.post("/instagram", getValidToken, async (req, res) => {
+metaRoute.post("/instagram/image-text/create", getValidToken, async (req, res) => {
   const { userId, caption, imageUrl } = req.body;
 
   try {
@@ -324,33 +546,257 @@ metaRoute.post("/instagram", getValidToken, async (req, res) => {
   }
 });
 
+
 /**
+ * Get instagram posts
+ */
+metaRoute.get("/instagram/posts", getValidToken, async (req, res) => {
+  const { userId, limit = 10, after, before } = req.query;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId)
+      throw new Error("Instagram account not linked");
+
+    const igUserId = metaUser.instagram.igUserId;
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const params = {
+      access_token: pageToken,
+      fields: "id,caption,media_type,media_url,permalink,timestamp",
+      limit,
+    };
+
+    if (after) params.after = after;
+    if (before) params.before = before;
+
+    const postsRes = await axios.get(`https://graph.facebook.com/${igUserId}/media`, {
+      params,
+    });
+
+    res.json({
+      success: true,
+      posts: postsRes.data.data,
+      paging: postsRes.data.paging || null,
+    });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to fetch Instagram posts" });
+  }
+});
+
+
+
+/**
+ * Create instagram video
+ * 
+ * Instagram Video Upload Requirements (Simple Upload Method)
+
+    Maximum file size: 100 MB
+
+    Maximum video length: 60 seconds (for feed videos; longer videos require IGTV or Reels API)
+
+    Recommended formats: MP4 (H.264 codec, AAC audio)
+
+    Upload method: Simple upload (direct single request, ≤ 100 MB)
+
+    Required permissions:
+
+        instagram_basic
+
+        pages_show_list
+
+        instagram_content_publish
+
+        Valid Instagram Business or Creator account linked to a Facebook Page with a Page Access Token */
+metaRoute.post("/instagram/video", getValidToken, async (req, res) => {
+  const { userId, caption, videoUrl } = req.body;
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId)
+      throw new Error("Instagram account not linked");
+
+    const igUserId = metaUser.instagram.igUserId;
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const mediaRes = await axios.post(`https://graph.facebook.com/${igUserId}/media`, {
+      video_url: videoUrl,
+      caption,
+      access_token: pageToken,
+    });
+
+    const publishRes = await axios.post(`https://graph.facebook.com/${igUserId}/media_publish`, {
+      creation_id: mediaRes.data.id,
+      access_token: pageToken,
+    });
+
+    res.json({ success: true, postId: publishRes.data.id });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to upload Instagram video" });
+  }
+});
+
+/**
+ * List comments on a post
+ */
+metaRoute.get("/instagram/comments/:postId", getValidToken, async (req, res) => {
+  const { userId, after, before, limit } = req.query;  
+  const { postId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId) {
+      throw new Error("Instagram account not linked");
+    }
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    // build params dynamically
+    const params = {
+      fields: "id,text,username,timestamp",
+      access_token: pageToken,
+    };
+    if (after) params.after = after;       
+    if (before) params.before = before;    
+    if (limit) params.limit = limit;       
+
+    const commentsRes = await axios.get(
+      `https://graph.facebook.com/${postId}/comments`,
+      { params }
+    );
+
+    // Return comments + paging cursors from Facebook
+    res.json({
+      data: commentsRes.data.data,
+      paging: commentsRes.data.paging,
+    });
+
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to list Instagram comments" });
+  }
+});
+
+
+/**
+ * Add comment to a post
+ */
+metaRoute.post("/instagram/comments/:postId", getValidToken, async (req, res) => {
+  const { userId, message } = req.body;
+  const { postId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId)
+      throw new Error("Instagram account not linked");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const commentRes = await axios.post(
+      `https://graph.facebook.com/${postId}/comments`,
+      { message, access_token: pageToken }
+    );
+
+    res.json(commentRes.data);
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to add Instagram comment" });
+  }
+});
+
+/**
+ * Update comment
+ */
+metaRoute.put("/instagram/comments/:commentId", getValidToken, async (req, res) => {
+  const { userId, message } = req.body;
+  const { commentId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId)
+      throw new Error("Instagram account not linked");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const updateRes = await axios.post(
+      `https://graph.facebook.com/${commentId}`,
+      { message, access_token: pageToken }
+    );
+
+    res.json(updateRes.data);
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to update Instagram comment" });
+  }
+});
+
+/**
+ * Delete comment
+ */
+metaRoute.delete("/instagram/comments/:commentId", getValidToken, async (req, res) => {
+  const { userId } = req.query;
+  const { commentId } = req.params;
+
+  try {
+    const metaUser = await MetaUser.findOne({ userId });
+    if (!metaUser || !metaUser.instagram.igUserId)
+      throw new Error("Instagram account not linked");
+
+    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
+
+    const deleteRes = await axios.delete(
+      `https://graph.facebook.com/${commentId}`,
+      { params: { access_token: pageToken } }
+    );
+
+    res.json(deleteRes.data);
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Failed to delete Instagram comment" });
+  }
+});
+
+
+/*****************************************************
+ * META ADVERTS
+****************************************************
+*/
+
+/*
  * Fetch all ads for a user
  */
 metaRoute.get("/ads", async (req, res) => {
-  const { userId } = req.query;
+  const { userId, after, before, limit } = req.query;  
   const { META_AD_ACCOUNT_ID } = process.env;
 
-  try 
-  {
-
+  try {
     const metaUser = await MetaUser.findOne({ userId });
-    
     if (!metaUser) {
       return res.status(404).json({ message: "Meta user not found" });
     }
+
     const accessToken = metaUser.facebook.userAccessToken;
+
+    // Build params dynamically so Facebook handles pagination
+    const params = {
+      access_token: accessToken,
+      fields: "id,name,status,created_time,creative{id,name},adset{id,name},campaign{id,name}",
+      limit: limit || 25 
+    };
+    if (after) params.after = after;
+    if (before) params.before = before;
+
     const adsRes = await axios.get(
       `https://graph.facebook.com/v18.0/${META_AD_ACCOUNT_ID}/ads`,
-      {
-        params: {
-          access_token: accessToken,
-          fields: "id,name,status,created_time,creative{id,name},adset{id,name},campaign{id,name}"
-        }
-      }
+      { params }
     );
 
-    res.json({ success: true, ads: adsRes.data.data });
+    res.json({
+      success: true,
+      ads: adsRes.data.data,
+      paging: adsRes.data.paging  
+    });
   } catch (error) {
     console.error("Fetch Ads error:", error.response?.data || error.message);
     res.status(500).json({ message: "Failed to fetch ads" });
