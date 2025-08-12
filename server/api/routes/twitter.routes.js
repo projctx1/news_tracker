@@ -21,9 +21,8 @@ async function getUserTwitterClient(userId) {
   const twitterUser = await TwitterUser.findById(userId);
   if (!twitterUser) throw new Error('Twitter user not found');
 
-  return new TwitterApi({
-    appKey: process.env.TWITTER_API_KEY,
-    appSecret: process.env.TWITTER_API_SECRET,
+  // Return a client with the user's tokens embedded
+  return twitterClient.loginWithAccessToken({
     accessToken: twitterUser.accessToken,
     accessSecret: twitterUser.accessSecret,
   });
@@ -41,7 +40,11 @@ twitterRoute.get('/auth', async (req, res) => {
   );
 
   // Save verifier & state in session or temp store
-  req.session = { codeVerifier, state };
+  req.session.codeVerifier = codeVerifier;
+  req.session.state = state;
+
+  await req.session.save();
+
   res.redirect(url);
 });
 
@@ -140,7 +143,7 @@ twitterRoute.get('/target-tweets', async (req, res) => {
  * Create a tweet
  * 
  */
-twitterRoute.post('/twitter/post', async (req, res) => {
+twitterRoute.post('/post', async (req, res) => {
   const { userId, text } = req.body;
   try {
     const client = await getUserTwitterClient(userId);
@@ -157,7 +160,7 @@ twitterRoute.post('/twitter/post', async (req, res) => {
  * Get recent tweets posted by user on twitter
  * 
  */
-twitterRoute.get('/twitter/posts', async (req, res) => {
+twitterRoute.get('/posts', async (req, res) => {
   const { userId, max_results = 10, pagination_token } = req.query;
   try {
     const twitterUser = await TwitterUser.findById(userId);
@@ -190,7 +193,7 @@ twitterRoute.get('/twitter/posts', async (req, res) => {
  * 
  * Create a reply (comment)
  */
-twitterRoute.post('/twitter/comments', async (req, res) => {
+twitterRoute.post('/comments', async (req, res) => {
   const { userId, text, in_reply_to_tweet_id } = req.body;
   try {
     const client = await getUserTwitterClient(userId);
@@ -207,7 +210,7 @@ twitterRoute.post('/twitter/comments', async (req, res) => {
 /**
  * Delete a tweet
  */
-twitterRoute.delete('/twitter/post/:tweetId', async (req, res) => {
+twitterRoute.delete('/post/:tweetId', async (req, res) => {
   const { userId } = req.query
   const { tweetId } = req.params;
   try {
@@ -224,7 +227,7 @@ twitterRoute.delete('/twitter/post/:tweetId', async (req, res) => {
  * 
  * Update a comment/tweet (delete + repost)
  */
-twitterRoute.put('/twitter/comments/:tweetId', async (req, res) => {
+twitterRoute.put('/comments/:tweetId', async (req, res) => {
   const { userId, text } = req.body;
   const { tweetId } = req.params;
   try {
