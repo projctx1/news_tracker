@@ -2,6 +2,9 @@ require('dotenv').config()
 const express = require('express');
 const app = express();
 const port = process.env.PORT;
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
 
 require('./config/mongoose.config');
 
@@ -66,6 +69,9 @@ const endTime = now;
 //updateBiggestCompaniesStock();
 //scrapAndSaveToDb({ url: 'https://www.coindesk.com/' });
 
+
+
+
 app.get('/health', async (req, res, next) => {
   try {
     console.log('✅ GET /health hit')
@@ -81,6 +87,19 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Node server!' });
 });
 
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
+if (process.env.NODE_ENV !== 'production') {
+    // Self-signed cert for local dev
+    const options = {
+        key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
+    };
+
+    https.createServer(options, app).listen(3001, () => {
+        console.log('HTTPS Dev Server running at https://localhost:3001');
+    });
+}

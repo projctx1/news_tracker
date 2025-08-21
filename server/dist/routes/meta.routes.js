@@ -38,7 +38,7 @@ function getValidToken(_x, _x2, _x3) {
  */
 function _getValidToken() {
   _getValidToken = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(req, res, next) {
-    var userId, metaUser, now, token, refreshRes, expiresIn, newExpiryDate, _error$response9, _t9;
+    var userId, _metaUser7, now, token, refreshRes, expiresIn, newExpiryDate, _error$response9, _t9;
     return _regenerator().w(function (_context9) {
       while (1) switch (_context9.p = _context9.n) {
         case 0:
@@ -57,8 +57,8 @@ function _getValidToken() {
             userId: userId
           });
         case 2:
-          metaUser = _context9.v;
-          if (metaUser) {
+          _metaUser7 = _context9.v;
+          if (_metaUser7) {
             _context9.n = 3;
             break;
           }
@@ -67,19 +67,19 @@ function _getValidToken() {
           }));
         case 3:
           now = new Date();
-          token = metaUser.facebook.userAccessToken; // If token expired or will expire in next 5 mins, refresh
-          if (!(!metaUser.tokenExpiry || metaUser.tokenExpiry <= new Date(now.getTime() + 5 * 60 * 1000))) {
+          token = _metaUser7.facebook.userAccessToken; // If token expired or will expire in next 5 mins, refresh
+          if (!(!_metaUser7.tokenExpiry || _metaUser7.tokenExpiry <= new Date(now.getTime() + 5 * 60 * 1000))) {
             _context9.n = 6;
             break;
           }
           console.log("Refreshing token for user ".concat(userId, "..."));
           _context9.n = 4;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/oauth/access_token", {
+          return _axios["default"].get("https://graph.facebook.com/v18.0/oauth/access_token", {
             params: {
               grant_type: "fb_exchange_token",
               client_id: META_APP_ID,
               client_secret: META_APP_SECRET,
-              fb_exchange_token: metaUser.facebook.refreshToken || token
+              fb_exchange_token: _metaUser7.facebook.refreshToken || token
             }
           });
         case 4:
@@ -87,16 +87,16 @@ function _getValidToken() {
           token = refreshRes.data.access_token;
           expiresIn = refreshRes.data.expires_in;
           newExpiryDate = new Date(now.getTime() + expiresIn * 1000); // Save refreshed token
-          metaUser.facebook.userAccessToken = token;
-          metaUser.facebook.refreshToken = token;
-          metaUser.tokenExpiry = newExpiryDate;
+          _metaUser7.facebook.userAccessToken = token;
+          _metaUser7.facebook.refreshToken = token;
+          _metaUser7.tokenExpiry = newExpiryDate;
           _context9.n = 5;
-          return metaUser.save();
+          return _metaUser7.save();
         case 5:
           console.log("Token refreshed. Expires at ".concat(newExpiryDate.toISOString()));
         case 6:
           // Attach to request for use in controllers
-          req.metaUser = metaUser;
+          req.metaUser = _metaUser7;
           req.accessToken = token;
           next();
           _context9.n = 8;
@@ -116,7 +116,7 @@ function _getValidToken() {
   return _getValidToken.apply(this, arguments);
 }
 metaRoute.get("/auth", function (req, res) {
-  var authUrl = "https://www.facebook.com/v21.0/dialog/oauth?client_id=".concat(META_APP_ID, "&redirect_uri=").concat(encodeURIComponent(META_REDIRECT_URI), "&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish&response_type=code");
+  var authUrl = "https://www.facebook.com/v18.0/dialog/oauth?client_id=".concat(META_APP_ID, "&redirect_uri=").concat(encodeURIComponent(META_REDIRECT_URI), "&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish&response_type=code");
   res.redirect(authUrl);
 });
 
@@ -125,14 +125,14 @@ metaRoute.get("/auth", function (req, res) {
  */
 metaRoute.get("/auth/callback", /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(req, res) {
-    var _req$query, code, userId, tokenRes, shortLivedToken, longTokenRes, longLivedToken, expiryDate, pagesRes, metaUser, _error$response, _t;
+    var code, tokenRes, shortLivedToken, longTokenRes, longLivedToken, expiryDate, meRes, metaUserId, pagesRes, pages, _metaUser, _error$response, _t;
     return _regenerator().w(function (_context) {
       while (1) switch (_context.p = _context.n) {
         case 0:
-          _req$query = req.query, code = _req$query.code, userId = _req$query.userId;
+          code = req.query.code; // no userId in query anymore
           _context.p = 1;
           _context.n = 2;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/oauth/access_token", {
+          return _axios["default"].get("https://graph.facebook.com/v18.0/oauth/access_token", {
             params: {
               client_id: META_APP_ID,
               client_secret: META_APP_SECRET,
@@ -142,9 +142,15 @@ metaRoute.get("/auth/callback", /*#__PURE__*/function () {
           });
         case 2:
           tokenRes = _context.v;
-          shortLivedToken = tokenRes.data.access_token; // Exchange short-lived token for long-lived token
-          _context.n = 3;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/oauth/access_token", {
+          shortLivedToken = tokenRes.data.access_token;
+          if (shortLivedToken) {
+            _context.n = 3;
+            break;
+          }
+          throw new Error("No short-lived token returned from Facebook");
+        case 3:
+          _context.n = 4;
+          return _axios["default"].get("https://graph.facebook.com/v18.0/oauth/access_token", {
             params: {
               grant_type: "fb_exchange_token",
               client_id: META_APP_ID,
@@ -152,53 +158,89 @@ metaRoute.get("/auth/callback", /*#__PURE__*/function () {
               fb_exchange_token: shortLivedToken
             }
           });
-        case 3:
+        case 4:
           longTokenRes = _context.v;
           longLivedToken = longTokenRes.data.access_token;
-          expiryDate = new Date(Date.now() + longTokenRes.data.expires_in * 1000); // Get user pages
-          _context.n = 4;
-          return _axios["default"].get("https://graph.facebook.com/me/accounts?access_token=".concat(longLivedToken));
-        case 4:
+          if (longLivedToken) {
+            _context.n = 5;
+            break;
+          }
+          throw new Error("No long-lived token returned from Facebook");
+        case 5:
+          if (longTokenRes.data.expires_in && !isNaN(longTokenRes.data.expires_in)) {
+            expiryDate = new Date(Date.now() + longTokenRes.data.expires_in * 1000);
+          } else {
+            expiryDate = new Date("9999-12-31");
+          }
+
+          // Get Facebook user ID from /me endpoint
+          _context.n = 6;
+          return _axios["default"].get("https://graph.facebook.com/me", {
+            params: {
+              access_token: longLivedToken,
+              fields: "id,name"
+            }
+          });
+        case 6:
+          meRes = _context.v;
+          metaUserId = meRes.data.id;
+          if (metaUserId) {
+            _context.n = 7;
+            break;
+          }
+          throw new Error("Could not retrieve Facebook user ID from /me");
+        case 7:
+          _context.n = 8;
+          return _axios["default"].get("https://graph.facebook.com/me/accounts", {
+            params: {
+              access_token: longLivedToken
+            }
+          });
+        case 8:
           pagesRes = _context.v;
-          _context.n = 5;
+          pages = Array.isArray(pagesRes.data.data) ? pagesRes.data.data.map(function (p) {
+            return {
+              pageId: p.id,
+              pageName: p.name,
+              pageAccessToken: p.access_token
+            };
+          }) : []; // Create or update MetaUser in DB using Facebook user ID as unique userId
+          _context.n = 9;
           return _meta_userModel["default"].findOneAndUpdate({
-            userId: userId
-          }, {
+            userId: metaUserId
+          },
+          // userId is Facebook user ID string
+          {
             facebook: {
               userAccessToken: longLivedToken,
               refreshToken: longLivedToken,
-              pages: pagesRes.data.data.map(function (p) {
-                return {
-                  pageId: p.id,
-                  pageName: p.name,
-                  pageAccessToken: p.access_token
-                };
-              })
+              pages: pages
             },
             tokenExpiry: expiryDate
           }, {
             upsert: true,
             "new": true
           });
-        case 5:
-          metaUser = _context.v;
+        case 9:
+          _metaUser = _context.v;
+          // Return response
           res.json({
             success: true,
-            metaUser: metaUser
+            metaUser: _metaUser
           });
-          _context.n = 7;
+          _context.n = 11;
           break;
-        case 6:
-          _context.p = 6;
+        case 10:
+          _context.p = 10;
           _t = _context.v;
-          console.error(((_error$response = _t.response) === null || _error$response === void 0 ? void 0 : _error$response.data) || _t.message);
+          console.error("OAuth callback error:", ((_error$response = _t.response) === null || _error$response === void 0 ? void 0 : _error$response.data) || _t.message);
           res.status(500).json({
             message: "OAuth callback failed"
           });
-        case 7:
+        case 11:
           return _context.a(2);
       }
-    }, _callee, null, [[1, 6]]);
+    }, _callee, null, [[1, 10]]);
   }));
   return function (_x4, _x5) {
     return _ref.apply(this, arguments);
@@ -212,7 +254,7 @@ metaRoute.get("/auth/callback", /*#__PURE__*/function () {
  */
 metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
   var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(req, res) {
-    var userId, _metaUser$facebook, _igRes$data$instagram, metaUser, page, igRes, igBusinessAccountId, igDetailsRes, _error$response2, _t2;
+    var userId, _metaUser2$facebook, _igRes$data$instagram, _metaUser2, page, igRes, igBusinessAccountId, igDetailsRes, _error$response2, _t2;
     return _regenerator().w(function (_context2) {
       while (1) switch (_context2.p = _context2.n) {
         case 0:
@@ -223,8 +265,8 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
             userId: userId
           });
         case 2:
-          metaUser = _context2.v;
-          if (metaUser) {
+          _metaUser2 = _context2.v;
+          if (_metaUser2) {
             _context2.n = 3;
             break;
           }
@@ -232,7 +274,7 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
             message: "Meta user not found"
           }));
         case 3:
-          if ((_metaUser$facebook = metaUser.facebook) !== null && _metaUser$facebook !== void 0 && (_metaUser$facebook = _metaUser$facebook.pages) !== null && _metaUser$facebook !== void 0 && _metaUser$facebook.length) {
+          if ((_metaUser2$facebook = _metaUser2.facebook) !== null && _metaUser2$facebook !== void 0 && (_metaUser2$facebook = _metaUser2$facebook.pages) !== null && _metaUser2$facebook !== void 0 && _metaUser2$facebook.length) {
             _context2.n = 4;
             break;
           }
@@ -241,9 +283,9 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
           }));
         case 4:
           // Use the first page (or let user pick)
-          page = metaUser.facebook.pages[0]; // Step 1: Get Instagram Business Account ID linked to this FB page
+          page = _metaUser2.facebook.pages[0]; // Step 1: Get Instagram Business Account ID linked to this FB page
           _context2.n = 5;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/".concat(page.pageId), {
+          return _axios["default"].get("https://graph.facebook.com/v18.0/".concat(page.pageId), {
             params: {
               fields: "instagram_business_account",
               access_token: page.pageAccessToken
@@ -261,7 +303,7 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
           }));
         case 6:
           _context2.n = 7;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/".concat(igBusinessAccountId), {
+          return _axios["default"].get("https://graph.facebook.com/v18.0/".concat(igBusinessAccountId), {
             params: {
               fields: "username",
               access_token: page.pageAccessToken
@@ -270,17 +312,17 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
         case 7:
           igDetailsRes = _context2.v;
           // Step 3: Update MetaUser with Instagram data
-          metaUser.instagram = {
+          _metaUser2.instagram = {
             igUserId: igBusinessAccountId,
             username: igDetailsRes.data.username
           };
           _context2.n = 8;
-          return metaUser.save();
+          return _metaUser2.save();
         case 8:
           res.json({
             success: true,
             message: "Instagram connected successfully",
-            instagram: metaUser.instagram
+            instagram: _metaUser2.instagram
           });
           _context2.n = 10;
           break;
@@ -306,7 +348,7 @@ metaRoute.post("/connect-instagram-page", /*#__PURE__*/function () {
  */
 metaRoute.post("/facebook", getValidToken, /*#__PURE__*/function () {
   var _ref3 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3(req, res) {
-    var _req$body, userId, message, link, metaUser, pageToken, pageId, postUrl, postRes, _error$response3, _t3;
+    var _req$body, userId, message, link, _metaUser3, pageToken, pageId, postUrl, postRes, _error$response3, _t3;
     return _regenerator().w(function (_context3) {
       while (1) switch (_context3.p = _context3.n) {
         case 0:
@@ -317,15 +359,15 @@ metaRoute.post("/facebook", getValidToken, /*#__PURE__*/function () {
             userId: userId
           });
         case 2:
-          metaUser = _context3.v;
-          if (metaUser) {
+          _metaUser3 = _context3.v;
+          if (_metaUser3) {
             _context3.n = 3;
             break;
           }
           throw new Error("Meta user not found");
         case 3:
-          pageToken = metaUser.facebook.pages[0].pageAccessToken;
-          pageId = metaUser.facebook.pages[0].pageId;
+          pageToken = _metaUser3.facebook.pages[0].pageAccessToken;
+          pageId = _metaUser3.facebook.pages[0].pageId;
           postUrl = "https://graph.facebook.com/".concat(pageId, "/feed");
           _context3.n = 4;
           return _axios["default"].post(postUrl, {
@@ -360,10 +402,22 @@ metaRoute.post("/facebook", getValidToken, /*#__PURE__*/function () {
 
 /**
  * Create an Instagram Post
+ * 
+ * Use a properly sized image that fits Instagram’s requirements:
+
+*  Typical aspect ratios accepted for Instagram feed posts:
+
+        Landscape: 1.91:1
+
+        Square: 1:1
+
+        Portrait: 4:5
+
+        eg use this sample (https://100xinsider.com/uploads/1745193177OPINION_blog_image_1745193177.png)
  */
 metaRoute.post("/instagram", getValidToken, /*#__PURE__*/function () {
   var _ref4 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(req, res) {
-    var _req$body2, userId, caption, imageUrl, metaUser, igUserId, pageToken, mediaRes, publishRes, _error$response4, _t4;
+    var _req$body2, userId, caption, imageUrl, _metaUser4, igUserId, pageToken, mediaRes, publishRes, _error$response4, _t4;
     return _regenerator().w(function (_context4) {
       while (1) switch (_context4.p = _context4.n) {
         case 0:
@@ -374,15 +428,15 @@ metaRoute.post("/instagram", getValidToken, /*#__PURE__*/function () {
             userId: userId
           });
         case 2:
-          metaUser = _context4.v;
-          if (!(!metaUser || !metaUser.instagram.igUserId)) {
+          _metaUser4 = _context4.v;
+          if (!(!_metaUser4 || !_metaUser4.instagram.igUserId)) {
             _context4.n = 3;
             break;
           }
           throw new Error("Instagram account not linked");
         case 3:
-          igUserId = metaUser.instagram.igUserId;
-          pageToken = metaUser.facebook.pages[0].pageAccessToken; // Step 1: Create media container
+          igUserId = _metaUser4.instagram.igUserId;
+          pageToken = _metaUser4.facebook.pages[0].pageAccessToken; // Step 1: Create media container
           _context4.n = 4;
           return _axios["default"].post("https://graph.facebook.com/".concat(igUserId, "/media"), {
             image_url: imageUrl,
@@ -424,9 +478,9 @@ metaRoute.post("/instagram", getValidToken, /*#__PURE__*/function () {
 /**
  * Fetch all ads for a user
  */
-metaRoute.get("/ads", getValidToken, /*#__PURE__*/function () {
+metaRoute.get("/ads", /*#__PURE__*/function () {
   var _ref5 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(req, res) {
-    var userId, META_AD_ACCOUNT_ID, accessToken, adsRes, _error$response5, _t5;
+    var userId, META_AD_ACCOUNT_ID, _metaUser5, accessToken, adsRes, _error$response5, _t5;
     return _regenerator().w(function (_context5) {
       while (1) switch (_context5.p = _context5.n) {
         case 0:
@@ -434,35 +488,46 @@ metaRoute.get("/ads", getValidToken, /*#__PURE__*/function () {
           META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
           _context5.p = 1;
           _context5.n = 2;
-          return getValidToken(userId);
+          return _meta_userModel["default"].findOne({
+            userId: userId
+          });
         case 2:
-          accessToken = _context5.v;
-          _context5.n = 3;
-          return _axios["default"].get("https://graph.facebook.com/v21.0/".concat(META_AD_ACCOUNT_ID, "/ads"), {
+          _metaUser5 = _context5.v;
+          if (_metaUser5) {
+            _context5.n = 3;
+            break;
+          }
+          return _context5.a(2, res.status(404).json({
+            message: "Meta user not found"
+          }));
+        case 3:
+          accessToken = _metaUser5.facebook.userAccessToken;
+          _context5.n = 4;
+          return _axios["default"].get("https://graph.facebook.com/v18.0/".concat(META_AD_ACCOUNT_ID, "/ads"), {
             params: {
               access_token: accessToken,
               fields: "id,name,status,created_time,creative{id,name},adset{id,name},campaign{id,name}"
             }
           });
-        case 3:
+        case 4:
           adsRes = _context5.v;
           res.json({
             success: true,
             ads: adsRes.data.data
           });
-          _context5.n = 5;
+          _context5.n = 6;
           break;
-        case 4:
-          _context5.p = 4;
+        case 5:
+          _context5.p = 5;
           _t5 = _context5.v;
           console.error("Fetch Ads error:", ((_error$response5 = _t5.response) === null || _error$response5 === void 0 ? void 0 : _error$response5.data) || _t5.message);
           res.status(500).json({
             message: "Failed to fetch ads"
           });
-        case 5:
+        case 6:
           return _context5.a(2);
       }
-    }, _callee5, null, [[1, 4]]);
+    }, _callee5, null, [[1, 5]]);
   }));
   return function (_x10, _x11) {
     return _ref5.apply(this, arguments);
@@ -474,7 +539,7 @@ metaRoute.get("/ads", getValidToken, /*#__PURE__*/function () {
  */
 metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
   var _ref6 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(req, res) {
-    var _req$body3, userId, adName, adCreative, campaignName, dailyBudget, _process$env2, META_AD_ACCOUNT_ID, META_DEFAULT_OBJECTIVE, META_CURRENCY, metaUser, accessToken, campaignRes, adSetRes, creativeRes, adRes, _error$response6, _t6;
+    var _req$body3, userId, adName, adCreative, campaignName, dailyBudget, _process$env2, META_AD_ACCOUNT_ID, META_DEFAULT_OBJECTIVE, META_CURRENCY, _metaUser6, accessToken, campaignRes, adSetRes, creativeRes, adRes, _error$response6, _t6;
     return _regenerator().w(function (_context6) {
       while (1) switch (_context6.p = _context6.n) {
         case 0:
@@ -486,8 +551,8 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
             userId: userId
           });
         case 2:
-          metaUser = _context6.v;
-          if (metaUser) {
+          _metaUser6 = _context6.v;
+          if (_metaUser6) {
             _context6.n = 3;
             break;
           }
@@ -495,12 +560,9 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
             message: "Meta user not found"
           }));
         case 3:
+          accessToken = _metaUser6.facebook.userAccessToken; // Step 1: Create Campaign
           _context6.n = 4;
-          return getValidToken(userId);
-        case 4:
-          accessToken = _context6.v;
-          _context6.n = 5;
-          return _axios["default"].post("https://graph.facebook.com/v21.0/".concat(META_AD_ACCOUNT_ID, "/campaigns"), {
+          return _axios["default"].post("https://graph.facebook.com/v18.0/".concat(META_AD_ACCOUNT_ID, "/campaigns"), {
             name: campaignName,
             objective: META_DEFAULT_OBJECTIVE,
             status: "PAUSED"
@@ -509,10 +571,10 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
               access_token: accessToken
             }
           });
-        case 5:
+        case 4:
           campaignRes = _context6.v;
-          _context6.n = 6;
-          return _axios["default"].post("https://graph.facebook.com/v21.0/".concat(META_AD_ACCOUNT_ID, "/adsets"), {
+          _context6.n = 5;
+          return _axios["default"].post("https://graph.facebook.com/v18.0/".concat(META_AD_ACCOUNT_ID, "/adsets"), {
             name: "".concat(campaignName, " AdSet"),
             daily_budget: dailyBudget,
             billing_event: "IMPRESSIONS",
@@ -530,10 +592,10 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
               access_token: accessToken
             }
           });
-        case 6:
+        case 5:
           adSetRes = _context6.v;
-          _context6.n = 7;
-          return _axios["default"].post("https://graph.facebook.com/v21.0/".concat(META_AD_ACCOUNT_ID, "/adcreatives"), {
+          _context6.n = 6;
+          return _axios["default"].post("https://graph.facebook.com/v18.0/".concat(META_AD_ACCOUNT_ID, "/adcreatives"), {
             name: adName,
             object_story_spec: adCreative
           }, {
@@ -541,10 +603,10 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
               access_token: accessToken
             }
           });
-        case 7:
+        case 6:
           creativeRes = _context6.v;
-          _context6.n = 8;
-          return _axios["default"].post("https://graph.facebook.com/v21.0/".concat(META_AD_ACCOUNT_ID, "/ads"), {
+          _context6.n = 7;
+          return _axios["default"].post("https://graph.facebook.com/v18.0/".concat(META_AD_ACCOUNT_ID, "/ads"), {
             name: adName,
             adset_id: adSetRes.data.id,
             creative: {
@@ -556,7 +618,7 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
               access_token: accessToken
             }
           });
-        case 8:
+        case 7:
           adRes = _context6.v;
           res.json({
             success: true,
@@ -565,19 +627,19 @@ metaRoute.post("/advert", getValidToken, /*#__PURE__*/function () {
             creativeId: creativeRes.data.id,
             adId: adRes.data.id
           });
-          _context6.n = 10;
+          _context6.n = 9;
           break;
-        case 9:
-          _context6.p = 9;
+        case 8:
+          _context6.p = 8;
           _t6 = _context6.v;
           console.error("Ad creation error:", ((_error$response6 = _t6.response) === null || _error$response6 === void 0 ? void 0 : _error$response6.data) || _t6.message);
           res.status(500).json({
             message: "Failed to create advert"
           });
-        case 10:
+        case 9:
           return _context6.a(2);
       }
-    }, _callee6, null, [[1, 9]]);
+    }, _callee6, null, [[1, 8]]);
   }));
   return function (_x12, _x13) {
     return _ref6.apply(this, arguments);
@@ -596,12 +658,17 @@ metaRoute.put("/ads/:adId", getValidToken, /*#__PURE__*/function () {
           _req$body4 = req.body, userId = _req$body4.userId, name = _req$body4.name, status = _req$body4.status;
           adId = req.params.adId;
           _context7.p = 1;
-          _context7.n = 2;
-          return getValidToken(userId);
+          if (metaUser) {
+            _context7.n = 2;
+            break;
+          }
+          return _context7.a(2, res.status(404).json({
+            message: "Meta user not found"
+          }));
         case 2:
-          accessToken = _context7.v;
+          accessToken = metaUser.facebook.userAccessToken;
           _context7.n = 3;
-          return _axios["default"].post("https://graph.facebook.com/v21.0/".concat(adId), _objectSpread(_objectSpread({}, name && {
+          return _axios["default"].post("https://graph.facebook.com/v18.0/".concat(adId), _objectSpread(_objectSpread({}, name && {
             name: name
           }), status && {
             status: status
@@ -638,7 +705,7 @@ metaRoute.put("/ads/:adId", getValidToken, /*#__PURE__*/function () {
 /**
  * Delete an ad
  */
-metaRoute["delete"]("/ads/:adId", /*#__PURE__*/function () {
+metaRoute["delete"]("/ads/:adId", getValidToken, /*#__PURE__*/function () {
   var _ref8 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8(req, res) {
     var userId, adId, accessToken, deleteRes, _error$response8, _t8;
     return _regenerator().w(function (_context8) {
@@ -647,12 +714,17 @@ metaRoute["delete"]("/ads/:adId", /*#__PURE__*/function () {
           userId = req.body.userId;
           adId = req.params.adId;
           _context8.p = 1;
-          _context8.n = 2;
-          return getValidToken(userId);
+          if (metaUser) {
+            _context8.n = 2;
+            break;
+          }
+          return _context8.a(2, res.status(404).json({
+            message: "Meta user not found"
+          }));
         case 2:
-          accessToken = _context8.v;
+          accessToken = metaUser.facebook.userAccessToken;
           _context8.n = 3;
-          return _axios["default"]["delete"]("https://graph.facebook.com/v21.0/".concat(adId), {
+          return _axios["default"]["delete"]("https://graph.facebook.com/v18.0/".concat(adId), {
             params: {
               access_token: accessToken
             }

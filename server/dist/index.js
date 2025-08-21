@@ -13,6 +13,9 @@ require('dotenv').config();
 var express = require('express');
 var app = express();
 var port = process.env.PORT;
+var fs = require('fs');
+var https = require('https');
+var path = require('path');
 require('./config/mongoose.config');
 app.use(express.json());
 var _require = require('./services/news.services'),
@@ -91,3 +94,13 @@ app.get('/', function (req, res) {
 app.listen(port, function () {
   console.log("Server running at http://localhost:".concat(port));
 });
+if (process.env.NODE_ENV !== 'production') {
+  // Self-signed cert for local dev
+  var options = {
+    key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
+  };
+  https.createServer(options, app).listen(3001, function () {
+    console.log('HTTPS Dev Server running at https://localhost:3001');
+  });
+}
