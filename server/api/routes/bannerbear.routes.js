@@ -23,7 +23,7 @@ async function bannerbearFetch  (endpoint, options = {}, sync = false) {
         ...(options.headers || {})
       },
       data: options.body || undefined,
-      timeout: 60000
+      timeout: 600000
     });
     return { status: response.status, data: response.data };
   } catch (error) {
@@ -151,7 +151,6 @@ bannerRoute.post('/generate-video', async (req, res) => {
       metadata
     } = req.body;
 
-    // Use video_template if present, else template
     const payload = {
       video_template: video_template || template,  
       modifications,
@@ -206,6 +205,7 @@ bannerRoute.get('/videos/export/:uid', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 module.exports = bannerRoute;

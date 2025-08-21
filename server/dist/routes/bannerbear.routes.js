@@ -49,7 +49,7 @@ function _bannerbearFetch() {
               'Content-Type': 'application/json'
             }, options.headers || {}),
             data: options.body || undefined,
-            timeout: 60000
+            timeout: 600000
           });
         case 2:
           response = _context10.v;
@@ -327,7 +327,7 @@ bannerRoute.post('/generate-video', /*#__PURE__*/function () {
       while (1) switch (_context0.p = _context0.n) {
         case 0:
           _context0.p = 0;
-          _req$body2 = req.body, video_template = _req$body2.video_template, _req$body2$template = _req$body2.template, template = _req$body2$template === void 0 ? null : _req$body2$template, modifications = _req$body2.modifications, input_media_url = _req$body2.input_media_url, webhook_url = _req$body2.webhook_url, metadata = _req$body2.metadata; // Use video_template if present, else template
+          _req$body2 = req.body, video_template = _req$body2.video_template, _req$body2$template = _req$body2.template, template = _req$body2$template === void 0 ? null : _req$body2$template, modifications = _req$body2.modifications, input_media_url = _req$body2.input_media_url, webhook_url = _req$body2.webhook_url, metadata = _req$body2.metadata;
           payload = _objectSpread(_objectSpread(_objectSpread(_objectSpread({
             video_template: video_template || template,
             modifications: modifications
