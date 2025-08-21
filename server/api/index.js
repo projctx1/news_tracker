@@ -19,12 +19,13 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+import bannerRoute from './routes/bannerbear.routes.js';
 import newsRoute from './routes/news.routes.js';
 import pricesRoute from './routes/prices.routes.js';
 import twitterRoute from './routes/twitter.routes.js';
 import metaRoute from './routes/meta.routes.js';
 import canvaRoute from './routes/canva.routes.js';
-
+import s3Route from './routes/s3bucket.routes.js';
 const { getNews } = require('./services/news.services');
 const { getTweets } = require('./services/twitter.services');
 
@@ -53,11 +54,14 @@ const {
 //setInterval(getNews, 3600000);      // every hour
 //setInterval(getTweets, 3600000);    // every hour
 
+
+app.use('/api/banner', bannerRoute);
 app.use('/api/canva', canvaRoute);
 app.use('/api/news', newsRoute);
 app.use('/api/prices', pricesRoute);
 app.use('/api/twitter', twitterRoute);
 app.use('/api/meta', metaRoute);
+app.use('/api/s3', s3Route);
 
 const symbol = 'BTC_USDT';
 const interval = 'MINUTE_30';
