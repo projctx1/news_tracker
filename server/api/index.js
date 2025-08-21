@@ -3,17 +3,27 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT;
 const fs = require('fs');
+import session from 'express-session';
 const https = require('https');
 const path = require('path');
 
 require('./config/mongoose.config');
 
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'SESSION_SECRET',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: true }  
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 import newsRoute from './routes/news.routes.js';
 import pricesRoute from './routes/prices.routes.js';
 import twitterRoute from './routes/twitter.routes.js';
 import metaRoute from './routes/meta.routes.js';
+import canvaRoute from './routes/canva.routes.js';
 
 const { getNews } = require('./services/news.services');
 const { getTweets } = require('./services/twitter.services');
@@ -43,6 +53,7 @@ const {
 //setInterval(getNews, 3600000);      // every hour
 //setInterval(getTweets, 3600000);    // every hour
 
+app.use('/api/canva', canvaRoute);
 app.use('/api/news', newsRoute);
 app.use('/api/prices', pricesRoute);
 app.use('/api/twitter', twitterRoute);
@@ -93,13 +104,13 @@ app.listen(port, () => {
 });
 
 if (process.env.NODE_ENV !== 'production') {
-    // Self-signed cert for local dev
-    const options = {
-        key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
-        cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
-    };
+  // Self-signed cert for local dev
+  const options = {
+    key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
+  };
 
-    https.createServer(options, app).listen(3001, () => {
-        console.log('HTTPS Dev Server running at https://localhost:3001');
-    });
+  https.createServer(options, app).listen(3001, () => {
+    console.log('HTTPS Dev Server running at https://localhost:3001');
+  });
 }

@@ -75,7 +75,7 @@ async function getValidToken(req, res, next) {
  * Step 1: Redirect to Facebook OAuth
  */
 metaRoute.get("/auth", (req, res) => {
-  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish&response_type=code`;
+  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish,instagram_manage_comments&response_type=code`;
   res.redirect(authUrl);
 });
 
@@ -257,8 +257,8 @@ metaRoute.post("/connect-instagram-page", async (req, res) => {
 /**
  * List Posts on a Facebook Page
  */
-metaRoute.get("/facebook/posts", getValidToken, async (req, res) => {
-  const { userId, limit = 10, after, before } = req.query;
+metaRoute.get("/facebook/posts", async (req, res) => {
+  const { userId, limit = 10, after = null, before = null } = req.query;
 
   try {
     const metaUser = await MetaUser.findOne({ userId });
@@ -375,7 +375,7 @@ metaRoute.post("/facebook/video/create", getValidToken, async (req, res) => {
 /**
  * List comments on a post
  */
-metaRoute.get("/facebook/comments/:postId", getValidToken, async (req, res) => {
+metaRoute.get("/facebook/comments/:postId", async (req, res) => {
   const { userId, after, before, limit = 10 } = req.query;
   const { postId } = req.params;
 
@@ -464,7 +464,7 @@ metaRoute.put("/facebook/comments/:commentId", getValidToken, async (req, res) =
 /**
  * Delete a comment
  */
-metaRoute.delete("/facebook/comments/:commentId", getValidToken, async (req, res) => {
+metaRoute.delete("/facebook/comments/:commentId", async (req, res) => {
   const { userId } = req.query;
   const { commentId } = req.params;
 
@@ -550,7 +550,7 @@ metaRoute.post("/instagram/image-text/create", getValidToken, async (req, res) =
 /**
  * Get instagram posts
  */
-metaRoute.get("/instagram/posts", getValidToken, async (req, res) => {
+metaRoute.get("/instagram/posts", async (req, res) => {
   const { userId, limit = 10, after, before } = req.query;
 
   try {
@@ -592,11 +592,17 @@ metaRoute.get("/instagram/posts", getValidToken, async (req, res) => {
  * 
  * Instagram Video Upload Requirements (Simple Upload Method)
 
-    Maximum file size: 100 MB
+    Maximum file size: 100 MB, 
 
     Maximum video length: 60 seconds (for feed videos; longer videos require IGTV or Reels API)
 
     Recommended formats: MP4 (H.264 codec, AAC audio)
+
+    Square: 1:1 (e.g., 1080×1080)  
+
+    Portrait: between 4:5 (e.g., 1080×1350)
+
+    Landscape: minimum 1.91:1 (e.g., 1080×566)
 
     Upload method: Simple upload (direct single request, ≤ 100 MB)
 
@@ -640,7 +646,7 @@ metaRoute.post("/instagram/video", getValidToken, async (req, res) => {
 /**
  * List comments on a post
  */
-metaRoute.get("/instagram/comments/:postId", getValidToken, async (req, res) => {
+metaRoute.get("/instagram/comments/:postId", async (req, res) => {
   const { userId, after, before, limit } = req.query;  
   const { postId } = req.params;
 
@@ -706,37 +712,12 @@ metaRoute.post("/instagram/comments/:postId", getValidToken, async (req, res) =>
 });
 
 /**
- * Update comment
- */
-metaRoute.put("/instagram/comments/:commentId", getValidToken, async (req, res) => {
-  const { userId, message } = req.body;
-  const { commentId } = req.params;
-
-  try {
-    const metaUser = await MetaUser.findOne({ userId });
-    if (!metaUser || !metaUser.instagram.igUserId)
-      throw new Error("Instagram account not linked");
-
-    const pageToken = metaUser.facebook.pages[0].pageAccessToken;
-
-    const updateRes = await axios.post(
-      `https://graph.facebook.com/${commentId}`,
-      { message, access_token: pageToken }
-    );
-
-    res.json(updateRes.data);
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).json({ message: "Failed to update Instagram comment" });
-  }
-});
-
-/**
  * Delete comment
  */
-metaRoute.delete("/instagram/comments/:commentId", getValidToken, async (req, res) => {
-  const { userId } = req.query;
+metaRoute.delete("/instagram/comments/:commentId/:userId", async (req, res) => {
   const { commentId } = req.params;
+  const { userId } = req.params;
+
 
   try {
     const metaUser = await MetaUser.findOne({ userId });
