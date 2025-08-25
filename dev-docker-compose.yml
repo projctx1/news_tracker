@@ -1,0 +1,118 @@
+version: '3'
+
+services:
+
+  2_metaservice:
+    container_name: 2_metaservice
+    build: ./2_metaservice
+    ports:
+      - "3002:3002"
+    networks:
+      - news_tracker
+    volumes:
+      - ./2_metaservice:/app
+      - /app/node_modules
+
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - AWSS3REGION=${AWSS3REGION}
+      - AWSACCESSKEY=${AWSACCESSKEY}
+      - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  3_twitterservice:
+    container_name: 3_twitterservice
+    build: ./3_twitterservice
+    ports:
+      - "3003:3003"
+    networks:
+      - news_tracker
+    volumes:
+      - ./3_twitterservice:/app
+      - /app/node_modules
+
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - AWSS3REGION=${AWSS3REGION}
+      - AWSACCESSKEY=${AWSACCESSKEY}
+      - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  4_contentservice:
+    container_name: 4_contentservice
+    build: ./4_contentservice
+    ports:
+      - "3004:3004"
+    networks:
+      - news_tracker
+    volumes:
+      - ./4_contentservice:/app
+      - /app/node_modules
+
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - AWSS3REGION=${AWSS3REGION}
+      - AWSACCESSKEY=${AWSACCESSKEY}
+      - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  5_newsservice:
+    container_name: 5_newsservice
+    build: ./5_newsservice
+    ports:
+      - "3005:3005"
+    networks:
+      - news_tracker
+    volumes:
+      - ./5_newsservice:/app
+      - /app/node_modules
+
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - AWSS3REGION=${AWSS3REGION}
+      - AWSACCESSKEY=${AWSACCESSKEY}
+      - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  news_tracker:
+    external: true
+
+volumes:
+  mongo_data:

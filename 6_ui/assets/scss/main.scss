@@ -1,0 +1,59 @@
+*,
+*::after,
+*::before {
+    margin: 0;
+    padding: 0;
+    box-sizing: inherit;
+}
+
+html {
+    font-size: 61%;
+    font-family: 'Poppins', sans-serif;
+
+    @include respond(tab-land) {
+        // width < 1200?
+        font-size: 56.25%; //1 rem = 9px, 9/16 = 50%
+    }
+
+    @include respond(tab-port) {
+        // width < 900?
+        font-size: 55%; //1 rem = 8px, 8/16 = 50%
+    }
+
+    @include respond(phone) {
+        font-size: 50%; //1 rem = 9px, 9/16 = 50%
+    }
+
+    @include respond(big-desktop) {
+        font-size: 61%; //1rem = 12, 12/16
+    }
+
+    // Firefox
+    scrollbar-width: thin;
+    scrollbar-color: $btn-action-color-1 transparent;
+
+    // WebKit browsers (Chrome, Safari, Edge)
+    &::-webkit-scrollbar {
+        width: 6px; // Show a thin scrollbar
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent; // Hide the track
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: $btn-action-color-1; // Set thumb color
+        border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-button {
+        display: none; // Hide arrow buttons
+    }
+}
+
+body {
+    box-sizing: border-box;
+    font-size: 1.6rem;
+
+
+}

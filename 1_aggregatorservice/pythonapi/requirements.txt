@@ -1,0 +1,15 @@
+boto3==1.40.14
+Flask
+requests==2.32.4
+langchain==0.3.27
+langchain-community==0.3.27
+langchain-core==0.3.74
+langchain-openai==0.3.16
+langchain-text-splitters==0.3.9
+langgraph==0.6.5
+langgraph-checkpoint==2.1.1
+langgraph-prebuilt==0.6.4
+langgraph-sdk==0.2.2
+langsmith==0.4.14
+beautifulsoup4==4.13.4
+python-dotenv==1.0.1

@@ -1,0 +1,280 @@
+.auth {
+
+    & input {
+        transition: all .4s ease;
+
+        &:focus {
+            border: 1px solid $btn-action-color-1;
+        }
+    }
+
+    &__body {
+        display: flex;
+    }
+
+    &__left {
+        width: 90rem;
+        background: green;
+
+        @include respond(tab-port) {
+            display: none;
+        }
+    }
+
+    &__right {
+        min-height: 100vh;
+        background: $white-1;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 15rem;
+
+        flex: 1;
+
+        background: $auth-background;
+    }
+
+    &__form {
+        width: 44rem;
+        border: 1px solid $border-color-1;
+        border-radius: 24px;
+        padding: 3rem;
+        transition: all .5s ease;
+    }
+
+    &__authplogo {
+        width: 14rem;
+
+        & img {
+            object-fit: contain;
+            height: 100%;
+            width: 100%;
+        }
+    }
+
+    &__formh1 {
+        color: $white-1;
+        font-weight: 500;
+        font-size: 3rem;
+        margin-top: 3rem;
+    }
+
+    &__otpinstr {
+        margin: 5rem 0;
+        margin-bottom: 3rem;
+        color: rgba($white-1, .6)
+    }
+
+    &__authalt {
+        display: flex;
+        align-items: center;
+        margin-bottom: 3rem;
+
+        & span {
+
+            &:nth-child(1) {
+                color: rgba($white-1, .5);
+            }
+
+            &:nth-child(2) {
+                color: $main-color;
+                cursor: pointer;
+                margin-left: .4rem;
+            }
+        }
+    }
+
+    &__formarea {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 2.5rem;
+
+        &.send-btn {
+            margin-bottom: 0;
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        & label {
+            color: $white-1;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        & input {
+            outline: none;
+            width: 100%;
+            border: 1px solid $border-color-1;
+            border-radius: 10px;
+            background: none;
+            padding: 1.8rem 2rem;
+            font-size: 1.4rem;
+            color: $white-1;
+
+            &::placeholder {
+                font-weight: 500;
+            }
+
+            $size: 5px; // Controls the overall size of the checkbox
+            $tick-w: $size * 0.8; // Calculated tick width based on $size
+            $tick-h: $size * 0.25; // Calculated tick height based on $size
+            $tick-color: #000000; // Customize your tick color here (e.g., #000000 for black)
+
+            &[type="checkbox"] {
+                appearance: none;
+                -webkit-appearance: none;
+                width: 1rem;
+                height: 1rem;
+                margin: 0;
+                background: transparent; // Checkbox background is now always $white-1
+                border: 1px solid #cccccc; // A visible light grey border for the unchecked state
+                border-radius: 2px;
+                position: relative;
+                vertical-align: middle;
+                cursor: pointer;
+
+                &:checked {
+                    background-color: $white-1;
+                    ;
+                    border-color: rgba(0, 0, 0, 0.6); // Border color when checked
+                }
+
+                &:checked::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: $tick-w;
+                    height: $tick-h;
+                    border: 1px solid transparent;
+                    border-left-color: $tick-color; // Tick color controlled by $tick-color
+                    border-bottom-color: $tick-color; // Tick color controlled by $tick-color
+                    transform: translate(-50%, -60%) rotate(-45deg);
+                }
+
+                &:focus-visible {
+                    outline: none;
+                    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+                }
+
+                &:disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                }
+            }
+
+        }
+    }
+
+    &__didnotre {
+        margin-top: 3rem;
+        display: flex;
+        justify-content: center;
+
+        & button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            color: $btn-action-color-1;
+            font-size: 1.3rem;
+        }
+    }
+
+    &__otpinputb {
+        position: relative;
+
+        & button {
+            position: absolute;
+            right: 1.8rem;
+            top: 35%;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            color: $btn-action-color-1;
+        }
+    }
+
+    &__orpart {
+        margin: 2rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        & span {
+            background: $border-color-1;
+            height: 1px;
+            width: 16rem;
+        }
+
+        & p {
+            color: $white-1;
+            font-size: 1.4rem;
+        }
+    }
+
+    &__termsprivacy {
+        display: flex;
+        align-items: flex-start;
+
+        & p {
+            margin-left: 1rem;
+            color: rgba($white-1, 0.9);
+            font-size: 1.2rem;
+
+            & span {
+                text-decoration: underline;
+                cursor: pointer;
+            }
+        }
+    }
+
+    &__button {
+        border: 1px solid $btn-action-color-1;
+        border-radius: 10px;
+        padding: 1.7rem 2rem;
+        display: flex;
+        align-items: center;
+        color: $black-1;
+        background: $btn-action-color-1;
+        text-align: center;
+        cursor: pointer;
+
+        font-size: 1.5rem;
+
+        &.transparent {
+            background: transparent;
+            border: 1px solid $border-color-1;
+            color: $white-1;
+        }
+
+        &.socials-btn {
+            margin-bottom: 1.5rem;
+        }
+
+        & figure {
+            height: 2rem;
+            width: 2rem;
+            overflow: hidden;
+            border-radius: 100%;
+
+            & img {
+                object-fit: contain;
+                height: 70%;
+                width: 70%;
+            }
+
+            & svg {
+                height: 70%;
+                width: 70%;
+            }
+        }
+
+        & p {
+            margin: auto;
+        }
+    }
+}

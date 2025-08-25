@@ -1,0 +1,107 @@
+@mixin respond($breakpoint) {
+    @if $breakpoint ==phone {
+        @media only screen and (max-width: 37.5em) {
+            @content;
+        }
+
+        //600px
+    }
+
+    @if $breakpoint ==tab-port {
+        @media only screen and (max-width: 56.25em) {
+            @content;
+        }
+
+        //900px
+    }
+
+    @if $breakpoint ==tab-land {
+        @media only screen and (max-width: 75em) {
+            @content;
+        }
+
+        //1200px
+    }
+
+    @if $breakpoint ==big-desktop {
+        @media only screen and (min-width: 112.5em) {
+            @content;
+        }
+
+        //1800
+    }
+}
+
+@mixin dropdownStyles {
+    width: 50rem;
+    position: relative;
+
+    &--selected {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: $border-color-1;
+        padding: 1.2rem 1.5rem;
+        border: $section-border;
+        border-radius: 1rem;
+        font-size: 1.5rem;
+        color: $white-1;
+        cursor: pointer;
+
+        .placeholder {
+            opacity: 0.5;
+        }
+
+        svg {
+            fill: $white-2;
+        }
+    }
+
+    &--list {
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        left: 0;
+        width: 100%;
+        background-color: $auth-background;
+        border: $section-border;
+        border-radius: 1rem;
+        max-height: 25rem;
+        overflow-y: auto;
+        z-index: 10;
+    }
+
+    &--item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.2rem 1.5rem;
+        font-size: 1.4rem;
+        color: $white-2;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: $border-color-1;
+        }
+
+        .item-left {
+            display: flex;
+            flex-direction: column;
+
+            .network-name {
+                font-weight: 500;
+            }
+
+            .network-symbol {
+                font-size: 1.2rem;
+                opacity: 0.7;
+            }
+        }
+
+        .item-right {
+            font-size: 1.2rem;
+            color: $white-2;
+            opacity: 0.8;
+        }
+    }
+}
