@@ -28,7 +28,7 @@ const {
 } = require('./services/stocks.services.js');
 
 const {
-  scrapAndSaveToDb
+  runScrapper
 } = require('./services/scraper.services.js');
 
 
@@ -64,7 +64,7 @@ const endTime = now;
 })*/
 
 //updateBiggestCompaniesStock();
-//scrapAndSaveToDb({ url: 'https://www.coindesk.com/' });
+//scrapAndSaveToDb({ url: 'https://www.coingecko.com/en/news/load_more?page=5' });
 
 app.get('/health', async (req, res, next) => {
   try {

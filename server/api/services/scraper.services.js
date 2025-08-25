@@ -2,6 +2,14 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const urlModule = require('url');
 
+import ScraperURL from '../models/scraperurl.model';
+
+async function runScrapper() {
+    const urls = [
+        'https://stockanalysis.com/news/'
+    ]
+}
+
 async function scrapAndSaveToDb({ url }) {
     const browser = await puppeteer.launch({
         headless: true,
@@ -27,5 +35,5 @@ async function scrapAndSaveToDb({ url }) {
 }
 
 module.exports = {
-    scrapAndSaveToDb
+    runScrapper
 };

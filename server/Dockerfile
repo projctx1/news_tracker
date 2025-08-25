@@ -32,17 +32,11 @@ WORKDIR /app
 
 COPY . .
 
-#COPY entrypoint.sh /entrypoint.sh
-
-#RUN chmod +x /entrypoint.sh
-
 COPY package.json ./
 
 RUN npm install
 
 ENV PORT 3001
-
-EXPOSE $PORT
 
 #ENTRYPOINT ["/entrypoint.sh"]
 

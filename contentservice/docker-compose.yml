@@ -1,0 +1,1 @@
+#create the config for content service here. this service just interacts with any content creation api we use and uploads the results to our media db like s3 for example
