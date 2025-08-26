@@ -110,9 +110,65 @@ services:
       retries: 3
       start_period: 10s
 
+  7_clientservice_server:
+      container_name: 7_clientservice_server
+      build: ./7_clientservice/server
+      ports:
+        - "3007:3007"
+      networks:
+        - news_tracker
+      volumes:
+        - ./7_clientservice/server:/app
+        - /app/node_modules
+
+      environment:
+        - NODE_ENV=production
+        - MONGO_URI=${MONGO_URI}
+        - AWSS3REGION=${AWSS3REGION}
+        - AWSACCESSKEY=${AWSACCESSKEY}
+        - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+      restart: always
+
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 10s
+
+  7_clientservice_ui:
+        container_name: 7_clientservice_ui
+        build: ./7_clientservice/ui
+        ports:
+          - "3008:3008"
+        networks:
+          - news_tracker
+        volumes:
+          - ./7_clientservice/ui:/app
+          - /app/node_modules
+
+        environment:
+          - NODE_ENV=production
+          - MONGO_URI=${MONGO_URI}
+          - AWSS3REGION=${AWSS3REGION}
+          - AWSACCESSKEY=${AWSACCESSKEY}
+          - AWSSECRETACCESSKEY=${AWSSECRETACCESSKEY}
+
+        restart: always
+
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:3008/health"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 10s
+
 networks:
   news_tracker:
-    external: true
+    # external: true
+    driver: bridge
+
 
 volumes:
   mongo_data:

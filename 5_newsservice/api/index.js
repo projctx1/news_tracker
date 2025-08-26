@@ -20,6 +20,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 import newsRoute from './routes/news.routes.js';
+const { getNews } = require('./services/news.services');
+
+
+//setup cronjobs
+getNews();
+
+setInterval(getNews, 3600000);      // every hour
 
 app.use('/api/news', newsRoute);
 

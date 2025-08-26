@@ -25,6 +25,11 @@ app.use('/api/twitter', twitterRoute);
 
 const { getTweets } = require('./services/twitter.services');
 
+//setup cronjobs
+//getNews();
+
+//setInterval(getTweets, 3600000);    // every hour
+
 app.get('/health', async (req, res, next) => {
     try {
         console.log('✅ GET /health hit')

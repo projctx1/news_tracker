@@ -19,9 +19,10 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-import metaRoute from './routes/meta.routes.js';
+import newsRoute from './routes/news.routes.js';
 
-app.use('/api/meta', metaRoute);
+
+app.use('/api/news', newsRoute);
 
 app.get('/health', async (req, res, next) => {
     try {
@@ -35,10 +36,10 @@ app.get('/health', async (req, res, next) => {
 })
 
 app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to the Meta server!' });
+    res.json({ message: 'Welcome to the Node server!' });
 });
 
-const PORT = process.env.PORT || 3002
+const PORT = process.env.PORT || 3004
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
@@ -47,8 +48,8 @@ app.listen(PORT, () => {
 if (process.env.NODE_ENV !== 'production') {
     // Self-signed cert for local dev
     const options = {
-        key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
-        cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
+        //key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
+        //cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
     };
 
     https.createServer(options, app).listen(3001, () => {
