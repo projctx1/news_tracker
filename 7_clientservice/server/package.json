@@ -1,5 +1,5 @@
 {
-  "name": "twitter_service",
+  "name": "client_service",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -31,6 +31,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.879.0",
     "@aws-sdk/client-s3": "^3.682.0",
     "@googlemaps/google-maps-services-js": "^3.4.0",
     "axios": "^1.7.9",

@@ -6,6 +6,9 @@ const fs = require('fs');
 import session from 'express-session';
 const https = require('https');
 const path = require('path');
+import newsRoute from './routes/news.routes.js';
+import authRoutes from "./routes/auth.routes.js";
+import metaRoutes from "./routes/meta.routes.js";
 
 require('./db/config/mongoose.config.js');
 
@@ -19,10 +22,12 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-import newsRoute from './routes/news.routes.js';
 
+app.use("/api/auth", authRoutes);
 
 app.use('/api/news', newsRoute);
+
+app.use('/api/meta', metaRoutes);
 
 app.get('/health', async (req, res, next) => {
     try {
@@ -39,7 +44,7 @@ app.get('/', (req, res) => {
     res.json({ message: 'Welcome to the Node server!' });
 });
 
-const PORT = process.env.PORT || 3004
+const PORT = process.env.PORT || 3007
 
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
@@ -52,7 +57,7 @@ if (process.env.NODE_ENV !== 'production') {
         //cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
     };
 
-    https.createServer(options, app).listen(3001, () => {
-        console.log('HTTPS Dev Server running at https://localhost:3001');
+    https.createServer(options, app).listen(30071, () => {
+        console.log('HTTPS Dev Server running at https://localhost:30071');
     });
 }
