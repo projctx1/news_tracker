@@ -51,7 +51,7 @@ if (process.env.NODE_ENV !== 'production') {
         cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
     };
 
-    https.createServer(options, app).listen(3001, () => {
-        console.log('HTTPS Dev Server running at https://localhost:3001');
+    https.createServer(options, app).listen(30020, () => {
+        console.log('HTTPS Dev Server running at https://localhost:30020');
     });
 }

@@ -5,7 +5,7 @@ const metaUserSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
-      ref: "User",
+      ref: "AppUser",
       required: true,
       unique: true,
     },

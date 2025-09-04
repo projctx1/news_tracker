@@ -50,15 +50,3 @@ const PORT = process.env.PORT || 3004
 app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
 });
-
-if (process.env.NODE_ENV !== 'production') {
-    // Self-signed cert for local dev
-    const options = {
-        //key: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.key')),
-        //cert: fs.readFileSync(path.join(__dirname, 'certs', 'localhost.crt'))
-    };
-
-    https.createServer(options, app).listen(3001, () => {
-        console.log('HTTPS Dev Server running at https://localhost:3001');
-    });
-}

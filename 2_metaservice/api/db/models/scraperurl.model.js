@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const ScraperURLSchema = new mongoose.Schema({
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AppUser",  
+      required: true,
+    },
     url: {
         type: String,
         required: [true, 'url is required'],

@@ -34,6 +34,12 @@ async function getUserTwitterClient(userId) {
  * 
  */
 twitterRoute.get('/auth', async (req, res) => {
+  const { userId } = req.query;
+  if(!userId)
+      return res.status(400).json({data: "userId must be passed in query"});
+    
+  req.session.userId = userId;
+  
   const { url, codeVerifier, state } = twitterClient.generateOAuth2AuthLink(
     process.env.TWITTER_CALLBACK_URL,
     { scope: ['tweet.read', 'tweet.write', 'users.read', 'offline.access'] }
@@ -59,6 +65,8 @@ twitterRoute.get('/callback', async (req, res) => {
     return res.status(400).send("Invalid state or code");
   }
 
+  const appUserId = req.session.userId;
+
   try {
     const { client: loggedClient, accessToken, refreshToken } =
       await twitterClient.loginWithOAuth2({
@@ -75,6 +83,7 @@ twitterRoute.get('/callback', async (req, res) => {
     if (!existingUser) {
       // 2 Create Twitter user in DB
       existingUser = await TwitterUser.create({
+        appUserId: appUserId,
         username: me.data.username,
         accountId: me.data.id,
         accessToken,
