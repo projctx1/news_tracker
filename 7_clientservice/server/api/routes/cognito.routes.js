@@ -90,7 +90,7 @@ router.get("/callback", async (req, res) => {
     await user.save();
 
     // Store user session
-    req.session.userId = user._id;
+    req.userId = user._id;
 
     res.status(200).json({ user: user });
   } catch (err) {

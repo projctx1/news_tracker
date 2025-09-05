@@ -16,9 +16,6 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: "Invalid access token" });
     }
     
-    if (req.session.userId != user._id) {
-      return res.status(401).json({ error: "Unauthorized Forgery Operation" });
-    }
     req.user = user;
     next();
   } catch (err) {
