@@ -51,7 +51,8 @@ router.get("/callback", async (req, res) => {
   if (!code) return res.status(400).json({ error: "Missing code" });
 
   try {
-    // Exchange code for tokens
+
+    // exchange code for tokens
     const tokenResponse = await axios.post(
       `${cognitoDomain}/oauth2/token`,
       new URLSearchParams({
@@ -68,12 +69,10 @@ router.get("/callback", async (req, res) => {
 
     const { id_token, access_token, refresh_token } = tokenResponse.data;
 
-    // Decode ID token payload (JWT)
     const payload = JSON.parse(
       Buffer.from(id_token.split(".")[1], "base64").toString("utf-8")
     );
 
-    // Persist or update user in MongoDB
     let user = await AppUser.findOne({ email: payload.email });
     if (!user) {
       user = new AppUser({
@@ -91,7 +90,7 @@ router.get("/callback", async (req, res) => {
     await user.save();
 
     // Store user session
-    req.session.userId = user._id;
+    req.userId = user._id;
 
     res.status(200).json({ user: user });
   } catch (err) {

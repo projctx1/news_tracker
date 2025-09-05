@@ -1,17 +1,15 @@
 const express = require("express");
 const router = express.Router();
 import ScraperURL from "../db/models/scraperurl.model";
+import authMiddleware from "../middlewares/auth.middleware";
 
 /* -------------------------------------------------------------
  * @route   POST /scraper
  * @desc    Create a new ScraperURL (linked to logged-in user)
  * @access  Private (requires session)
  * ------------------------------------------------------------- */
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
 
     const scraperURL = new ScraperURL({
       ...req.body,
@@ -31,11 +29,8 @@ router.post("/", async (req, res) => {
  * @access  Private
  * @query   page (default = 1), limit (default = 10)
  * ------------------------------------------------------------- */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
 
     let { page = 1, limit = 10 } = req.query;
     page = parseInt(page);
@@ -69,12 +64,8 @@ router.get("/", async (req, res) => {
  * @desc    Get a single ScraperURL by ID (only if owned by user)
  * @access  Private
  * ------------------------------------------------------------- */
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
     const scraperURL = await ScraperURL.findOne({
       _id: req.params.id,
       userId: req.session.userId,
@@ -95,12 +86,8 @@ router.get("/:id", async (req, res) => {
  * @desc    Update a ScraperURL by ID (only if owned by user)
  * @access  Private
  * ------------------------------------------------------------- */
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
     const scraperURL = await ScraperURL.findOneAndUpdate(
       { _id: req.params.id, userId: req.session.userId },
       req.body,
@@ -122,11 +109,8 @@ router.put("/:id", async (req, res) => {
  * @desc    Delete a ScraperURL by ID (only if owned by user)
  * @access  Private
  * ------------------------------------------------------------- */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
 
     const scraperURL = await ScraperURL.findOneAndDelete({
       _id: req.params.id,
