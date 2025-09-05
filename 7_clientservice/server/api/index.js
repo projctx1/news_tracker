@@ -6,10 +6,9 @@ const fs = require('fs');
 import session from 'express-session';
 const https = require('https');
 const path = require('path');
-import newsRoute from './routes/news.routes.js';
-import authRoutes from "./routes/auth.routes.js";
-import metaRoutes from "./routes/meta.routes.js";
-
+import cognitoRoutes from "./routes/cognito.routes.js";
+import scrapperRoutes from "./routes/scrapperurl.routes.js";
+import s3Routes from "./routes/uploads.route.js";
 require('./db/config/mongoose.config.js');
 
 app.use(session({
@@ -23,11 +22,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", cognitoRoutes);
 
-app.use('/api/news', newsRoute);
+app.use("/api/scrapper", scrapperRoutes);
 
-app.use('/api/meta', metaRoutes);
+app.use("/api/s3", s3Routes);
 
 app.get('/health', async (req, res, next) => {
     try {

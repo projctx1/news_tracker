@@ -72,8 +72,14 @@ async function getValidToken(req, res, next) {
 */
 /**
  * Step 1: Redirect to Facebook OAuth
+ *    ensure to add userid query
  */
 metaRoute.get("/auth", (req, res) => {
+  const { userId } = req.query;
+  if(!userId)
+    return res.status(400).json({data: "userId must be passed in query"});
+  req.session.userId = userId;
+  
   const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}&scope=pages_manage_posts,pages_read_engagement,pages_show_list,ads_management,instagram_basic,instagram_content_publish,instagram_manage_comments&response_type=code`;
   res.redirect(authUrl);
 });
@@ -82,9 +88,12 @@ metaRoute.get("/auth", (req, res) => {
  * Step 2: Handle OAuth callback
  */
 metaRoute.get("/auth/callback", async (req, res) => {
-  const { code } = req.query; // no userId in query anymore
+  const { code } = req.query; 
 
   try {
+
+    const appUserId = req.session.userId;
+
     // Exchange code for short-lived token
     const tokenRes = await axios.get(
       `https://graph.facebook.com/v18.0/oauth/access_token`,
@@ -160,6 +169,7 @@ metaRoute.get("/auth/callback", async (req, res) => {
 
     // Create or update MetaUser in DB using Facebook user ID as unique userId
     const metaUser = await MetaUser.findOneAndUpdate(
+      { appUserId: appUserId},
       { userId: metaUserId }, // userId is Facebook user ID string
       {
         facebook: {

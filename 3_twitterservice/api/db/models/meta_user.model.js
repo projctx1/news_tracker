@@ -3,11 +3,15 @@ const mongoose = require("mongoose");
 
 const metaUserSchema = new mongoose.Schema(
   {
-    userId: {
+    appUserId: {
       type: String,
-      ref: "User",
+      ref: "AppUser",
       required: true,
       unique: true,
+    },
+    userId: {
+      type: String,
+      required: true,
     },
     facebook: {
       userAccessToken: { type: String, required: true },
