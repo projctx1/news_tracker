@@ -4,6 +4,8 @@ import FileUpload from "../db/models/file_upload.js";
 import multer from "multer";
 import multerS3 from "multer-s3-v3";   
 import s3 from "../db/config/s3.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
+
 
 const upload = multer({
   storage: multerS3({
@@ -22,7 +24,7 @@ const router = express.Router();
  * @route POST /files/upload
  * @desc Upload file to S3 and save record
  */
-router.post("/upload/:userId", upload.single("file"), async (req, res) => {
+router.post("/upload/:userId", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -47,7 +49,7 @@ router.post("/upload/:userId", upload.single("file"), async (req, res) => {
  * @route GET /files/user/:userId
  * @desc Get all files uploaded by a user
  */
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userId", authMiddleware, async (req, res) => {
   try {
     const files = await FileUpload.find({ user: req.params.userId }).populate(
       "user",

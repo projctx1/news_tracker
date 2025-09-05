@@ -1,4 +1,4 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = process.env.PORT;
@@ -8,7 +8,7 @@ const https = require('https');
 const path = require('path');
 import cognitoRoutes from "./routes/cognito.routes.js";
 import scrapperRoutes from "./routes/scrapperurl.routes.js";
-import s3Routes from "./routes/uploads.route.js";
+import s3Routes from "./routes/s3.route.js";
 require('./db/config/mongoose.config.js');
 
 app.use(session({
