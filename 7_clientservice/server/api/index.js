@@ -8,6 +8,7 @@ const https = require('https');
 const path = require('path');
 import cognitoRoutes from "./routes/cognito.routes.js";
 import scrapperRoutes from "./routes/scrapperurl.routes.js";
+import s3Routes from "./routes/uploads.route.js";
 require('./db/config/mongoose.config.js');
 
 app.use(session({
@@ -24,6 +25,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", cognitoRoutes);
 
 app.use("/api/scrapper", scrapperRoutes);
+
+app.use("/api/s3", s3Routes);
 
 app.get('/health', async (req, res, next) => {
     try {

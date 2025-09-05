@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const ScraperURL = require("../db/models/ScraperURL");
+import ScraperURL from "../db/models/scraperurl.model";
 
 /* -------------------------------------------------------------
  * @route   POST /scraper

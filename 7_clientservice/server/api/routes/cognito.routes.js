@@ -1,8 +1,8 @@
 require("dotenv").config();
 import express from "express";
 import AppUser from "../db/models/app_user.js";
-import MetaUser from "../db/models/metaUser.model.js";
-import TwitterUser from "../db/models/TwitterUser.js";
+import MetaUser from "../db/models/meta_user.model.js";
+import TwitterUser from "../db/models/twitter_user.model.js";
 import axios from "axios";
 import crypto from "crypto";
 
