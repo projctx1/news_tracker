@@ -18,7 +18,6 @@ export default function CognitoApiSdk({
   clientId,
   clientSecret,
   cognitoDomain,
-  redirectUri,
   sqsQueueUrl,
   onSuccess = () => {},
   onError = () => {},
@@ -165,27 +164,38 @@ export default function CognitoApiSdk({
     )
   );
 
-  // ===== GOOGLE CALLBACK =====
+ // ===== GOOGLE CALLBACK =====
   router.get(
     "/auth/callback",
     handleRoute(
       "loginGoogleCallback",
       async (req) => {
-        const { code, redirect_uri } = req.query;
-        const dynamicRedirectUri = `${req.protocol}://${req.get("host")}/cognito-api/auth/callback`;
+        const { code } = req.query;
+
+        const dynamicRedirectUri =
+          req.query.redirect_uri ||
+          `${req.protocol}://${req.get("host")}/cognito-api/auth/callback`;
+
+        const params = new URLSearchParams({
+          grant_type: "authorization_code",
+          client_id: clientId,
+          code,
+          redirect_uri: dynamicRedirectUri,
+        });
+
+        if (clientSecret) {
+          params.append("client_secret", clientSecret);
+        }
 
         const tokenRes = await axios.post(
           `${cognitoDomain}/oauth2/token`,
-          new URLSearchParams({
-            grant_type: "authorization_code",
-            client_id: clientId,
-            code,
-            redirect_uri: dynamicRedirectUri,
-          }),
-          { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+          params.toString(),
+          {
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          }
         );
 
-        return tokenRes.data;
+        return tokenRes.data; 
       },
       onGoogleCallback
     )
@@ -197,11 +207,13 @@ export default function CognitoApiSdk({
     handleRoute(
       "forgotPassword",
       async (req) => {
-        const { email } = req.body;
+        const { username } = req.body;
         return cognito.send(
           new ForgotPasswordCommand({
             ClientId: clientId,
-            Username: email,
+            Username: username,
+            SecretHash: generateSecretHash(username, clientId, clientSecret),
+             
           })
         );
       },
@@ -215,13 +227,14 @@ export default function CognitoApiSdk({
     handleRoute(
       "resetPassword",
       async (req) => {
-        const { email, code, newPassword } = req.body;
+        const { username, code, newPassword } = req.body;
         return cognito.send(
           new ConfirmForgotPasswordCommand({
             ClientId: clientId,
-            Username: email,
+            Username: username,
             ConfirmationCode: code,
             Password: newPassword,
+            SecretHash: generateSecretHash(username, clientId, clientSecret),
           })
         );
       },
@@ -235,12 +248,13 @@ export default function CognitoApiSdk({
     handleRoute(
       "passwordless",
       async (req) => {
-        const { email } = req.body;
+        const { username } = req.body;
         return cognito.send(
           new InitiateAuthCommand({
             AuthFlow: "CUSTOM_AUTH",
             ClientId: clientId,
-            AuthParameters: { USERNAME: email },
+            AuthParameters: { USERNAME: username, SECRET_HASH: generateSecretHash(username, clientId, clientSecret),
+             },
           })
         );
       },
