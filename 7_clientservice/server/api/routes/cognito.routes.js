@@ -1,12 +1,8 @@
-/**
- * File: auth.routes.js
- * Desc: Defines authentication routes using AWS Cognito,
- *       with support for Google and Twitter login, persisting
- *       users in MongoDB via AppUser model.
- */
 require("dotenv").config();
 import express from "express";
 import AppUser from "../db/models/app_user.js";
+import MetaUser from "../db/models/meta_user.model.js";
+import TwitterUser from "../db/models/twitter_user.model.js";
 import axios from "axios";
 import crypto from "crypto";
 
@@ -55,7 +51,8 @@ router.get("/callback", async (req, res) => {
   if (!code) return res.status(400).json({ error: "Missing code" });
 
   try {
-    // Exchange code for tokens
+
+    // exchange code for tokens
     const tokenResponse = await axios.post(
       `${cognitoDomain}/oauth2/token`,
       new URLSearchParams({
@@ -72,12 +69,10 @@ router.get("/callback", async (req, res) => {
 
     const { id_token, access_token, refresh_token } = tokenResponse.data;
 
-    // Decode ID token payload (JWT)
     const payload = JSON.parse(
       Buffer.from(id_token.split(".")[1], "base64").toString("utf-8")
     );
 
-    // Persist or update user in MongoDB
     let user = await AppUser.findOne({ email: payload.email });
     if (!user) {
       user = new AppUser({
@@ -95,10 +90,9 @@ router.get("/callback", async (req, res) => {
     await user.save();
 
     // Store user session
-    req.session.userId = user._id;
+    req.userId = user._id;
 
-    // Redirect to frontend with user info
-    res.redirect(`/dashboard?user=${encodeURIComponent(user.email)}`);
+    res.status(200).json({ user: user });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -115,12 +109,25 @@ router.get("/me", async (req, res) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const user = await AppUser.findById(req.session.userId).select("-idToken -accessToken -refreshToken");
+    const user = await AppUser.findById(req.session.userId).select(
+      "-idToken -accessToken -refreshToken"
+    );
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ user });
+    // Fetch related accounts
+    const metaUser = await MetaUser.find({ userId: user._id });
+    const twitterUser = await TwitterUser.find({ userId: user._id });
+
+    res.json({
+      user,
+      accounts: {
+        meta: metaUser || null,
+        twitter: twitterUser || null,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
