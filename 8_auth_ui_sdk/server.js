@@ -27,6 +27,9 @@ const cognitoUIConfig = new CognitoUIAuthSDK({
 
   onLogin: async (user, tokens, req, res) => {
     console.log(" User logged in:", user);
+    let FrontEndRedirect = process.env.FRONT_END_REDIRECT;
+    
+     return res.redirect(FrontEndRedirect);
   },
   onMe: async (userId, req, res) => {
     return { id: userId, role: "basic-user" };
@@ -39,7 +42,7 @@ const cognitoUIConfig = new CognitoUIAuthSDK({
 //to register cognito-ui routes
 app.use("/cognito-ui", cognitoUIConfig.router);
 
-//to authorize cognito-ui routes
+//to authorize cognito-ui routes this is a sample usage
 app.get("/cognito-ui-test", cognitoUIConfig.authMiddleware, (req, res) => {
   res.send("Cognito UI Auth Middleware is working!");
 });
