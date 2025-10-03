@@ -8,9 +8,10 @@ import {
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import axios from "axios";
- import crypto from "crypto";
+import crypto from "crypto";
 
 export default function CognitoApiSdk({
   region,
@@ -33,7 +34,8 @@ export default function CognitoApiSdk({
   const router = express.Router();
   const cognito = new CognitoIdentityProviderClient({ region });
   const sqs = new SQSClient({ region });
- 
+  const sns = new SNSClient({ region });
+  const otpStore = new Map();
   function generateSecretHash(username, clientId, clientSecret) {
     return crypto
       .createHmac("SHA256", clientSecret)
@@ -55,6 +57,7 @@ export default function CognitoApiSdk({
       console.error("SQS error:", err);
     }
   }
+  
 
   // === Handler Wrapper ===
   function handleRoute(event, fn, hook) {
@@ -120,7 +123,7 @@ export default function CognitoApiSdk({
     )
   );
 
-  // ===== LOGIN (email + password) =====
+  // ===== LOGIN (username + password) =====
   router.post(
     "/login",
     handleRoute(
@@ -242,25 +245,59 @@ export default function CognitoApiSdk({
     )
   );
 
-  // ===== PASSWORDLESS =====
-  router.post(
-    "/passwordless",
-    handleRoute(
-      "passwordless",
-      async (req) => {
-        const { username } = req.body;
-        return cognito.send(
-          new InitiateAuthCommand({
-            AuthFlow: "CUSTOM_AUTH",
-            ClientId: clientId,
-            AuthParameters: { USERNAME: username, SECRET_HASH: generateSecretHash(username, clientId, clientSecret),
-             },
-          })
-        );
-      },
-      onPasswordless
-    )
-  );
+  // // ===== PASSWORDLESS INIT =====
+  // router.post("/passwordless", async (req, res) => {
+  //   const { email } = req.body;
+
+  //   if (!email) {
+  //     return res.status(400).json({ success: false, message: "Email is required" });
+  //   }
+
+  //   // 1 Generate OTP
+  //   const token = Math.floor(100000 + Math.random() * 900000).toString();
+
+  //   // 2 Save OTP with expiry (5 mins)
+  //   otpStore.set(email, { token, expires: Date.now() + 5 * 60 * 1000 });
+
+  //   // 3 Publish OTP to SNS Topic (subscriber = user’s email)
+  //   try {
+  //     await sns.send(
+  //       new PublishCommand({
+  //         TopicArn: process.env.SNS_TOPIC_ARN, // must be configured with email subscription
+  //         Message: `Your login code is: ${token}`,
+  //         Subject: "Your One-Time Login Code",
+  //       })
+  //     );
+
+  //     res.json({ success: true, message: "OTP sent to email via SNS" });
+  //   } catch (err) {
+  //     console.error("SNS error:", err);
+  //     res.status(500).json({ success: false, message: "Failed to send OTP" });
+  //   }
+  // });
+
+  // // ===== PASSWORDLESS VALIDATE =====
+  // router.post("/passwordless/validate", async (req, res) => {
+  //   const { email, token } = req.body;
+
+  //   const entry = otpStore.get(email);
+
+  //   if (!entry || entry.token !== token || Date.now() > entry.expires) {
+  //     return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+  //   }
+
+  //   //  Clear OTP after successful validation
+  //   otpStore.delete(email);
+
+  //   // 4 Generate JWT
+  //   const jwtToken = jwt.sign(
+  //     { sub: email },
+  //     process.env.JWT_SECRET,
+  //     { expiresIn: "30d" }
+  //   );
+
+  //   res.json({ success: true, token: jwtToken });
+  // });
 
   return router;
 }
